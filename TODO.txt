@@ -1,0 +1,2 @@
+look at DeviceUuidFactory.java
+and com/bigbluebubble/metrics it has like device config stuff

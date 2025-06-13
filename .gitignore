@@ -1,0 +1,10 @@
+### IntelliJ IDEA ###
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+.idea/
+res/
+recompiler/
+playerData.txt
+apk/

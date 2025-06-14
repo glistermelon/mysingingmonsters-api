@@ -1,4 +1,4 @@
-package com.glisterbyte.Utility;
+package com.glisterbyte.Network;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class NetUtil {
+class NetUtil {
 
     public final static Logger NetUtilErrorLogger = Logger.getLogger(NetUtil.class.getName());
     public static void logError(Exception ex) {

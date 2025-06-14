@@ -1,4 +1,4 @@
-package com.glisterbyte.Utility;
+package com.glisterbyte.Network;
 
 public class Credentials {
     private String username;

@@ -5,4 +5,7 @@ msm-api-docs documentation
    :maxdepth: 1
    :caption: Data
 
-   data/player_data
+   data/player
+   data/island
+   data/structure
+   data/monster

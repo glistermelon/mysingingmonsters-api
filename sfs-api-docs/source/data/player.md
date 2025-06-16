@@ -10,25 +10,34 @@ I don't remember where I pulled this data from.
 
 ## Contents
 
-```{admonition} Timestamps
-All identified timestamps are `long` and appear to be in unix milliseconds. However, the last three digits of all known values are `000`, so it is likely that no precision is lost by just converting these to integer seconds.
+```{toctree}
+:hidden:
+:titlesonly:
+
+player/achievement
+player/daily_login
+player/daily_reward
+```
+
+```{warning}
+Analysis of `game::Player::initWithSFSObject` shows that there may be more undocumented key-values. There should be a tag containing `moniker_` but it isn't in my noob account data.
 ```
 
 | Key | Value Type | Value Description | Known/Example Values |
 |-|-|-|-|
-| `achievements` | `sfs_array` | Any array of achievements. `TODO` | |
+| `achievements` | `sfs_array` | Any array of [achievements](player/achievement). | |
 | `active_island_themes` | `sfs_array` | The user's active island themes. Nothing currently known about the value structure because there are no known examples besides an empty array. |
 | `bbb_id` | `long` | User's BigBlueBubble ID |
 | `country` | `utf_string` | Likely the home country recorded for the user, in [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) format. | `US` |
 | `client_platform` | `utf_string` | The client's platform. | `ios` |
 | `coins_actual` | `long` | The number of coins the user has. |
-| `daily_cumulative_login` | `sfs_object` | Information about the user's login streak. `TODO`
+| `daily_cumulative_login` | `sfs_object` | [Information about the user's login streak](player/daily_login).
 | `diamonds_actual` | `long` | The number of diamonds the user has. |
 | `diamonds_spent` | `int` | Presumably the number of diamonds spent by the user. Unsure if there are any time constraints on this. |
 | `display_name` | `utf_string` | The user's display name. |
 | `ethereal_currency_actual` | `long` | The number of shards the user has. |
 | `food_actual` | `long` | The amount of food/treats the user has. |
-| `islands` | `sfs_array` | A lot of information about the user's islands. `TODO` |
+| `islands` | `sfs_array` | An array of [islands](island). |
 | `keys` | `long` | The number of keys the user has. Maybe. |
 | `keys_actual` | `long` | The number of keys the user has. |
 | `last_client_version` | `utf_string` | The latest version of the app used by the client. Unsure if this updates before or after the user receives this info. | `4.3.0` |
@@ -38,7 +47,7 @@ All identified timestamps are `long` and appear to be in unix milliseconds. Howe
 | `relics` | `long` | The number of relics the user has. Maybe. |  |
 | `relics_actual` | `long` | The number of relics the user has. |  |
 | `relic_diamond_cost` | `int` | The number of diamonds a user can exchange for a relic in the market. | |
-| `scaled_daily_reward` | `sfs_array` | The reward for each day of a user's login streak. `TODO` |
+| `scaled_daily_reward` | `sfs_array` | [The reward for each day of a user's login streak.](player/daily_reward) |
 | `show_welcomeback` | `bool` | Whether to show the user the "Welcome Back" message shown to players who haven't been online for a long time. |
 | `starpower` | `long` | The amount of starpower the user has. Maybe. |
 | `starpower_actual` | `long` | The amount of starpower the user has. |
@@ -84,18 +93,18 @@ All identified timestamps are `long` and appear to be in unix milliseconds. Howe
 | `daily_bonus_amount` | `int` |
 | `reward_day` | `int` |
 `has_scratch_off_s` | `bool` | | How does this differ from `has_scratch_off_m`? |
-| `timed_events` | `sfs_array` | `TODO` |
+| `timed_events` | `sfs_array` |
 | `daily_bonus_type` | `utf_string` | `none` |
 | `player_groups` | `int_array` | `[38, 40, 45]` |
 | `date_created` | `long` |
 | `monsterScratchTime` | `long` |
 | `last_timed_theme` | `sfs_array` |
-| `avatar` | `sfs_object` | `TODO` |
+| `avatar` | `sfs_object` |
 | `tracks` | `sfs_array` |
 | `third_party_ads` | `bool` |
 | `third_party_video_ads` | `bool` |
 | `prev_rank` | `long` |
 | `active_island` | `long` | A big-ass number, so not an island index. |
-| `battle` | `sfs_object` | `TODO` |
+| `battle` | `sfs_object` |
 | `fb_invite_reward` | `int` |
 | `perma_campaigns_viewed` | `int_array` |

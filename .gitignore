@@ -8,3 +8,6 @@ res/
 recompiler/
 playerData.txt
 apk/
+
+### Documentation ###
+sfs-api-docs/build

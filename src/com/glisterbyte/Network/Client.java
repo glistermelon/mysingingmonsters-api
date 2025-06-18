@@ -1,11 +1,19 @@
 package com.glisterbyte.Network;
 
-import com.glisterbyte.Configuration.Settings;
+import com.glisterbyte.Configuration.Global;
+import com.glisterbyte.Network.ClientException.FetchFailed;
+import com.glisterbyte.Network.ClientException.InitializationFailed;
+import com.glisterbyte.SfsMapping.SfsMapper;
+import com.glisterbyte.SingingMonsters.Player;
+import com.glisterbyte.SingingMonsters.SfsModels.SfsPlayer;
+import com.smartfoxserver.v2.entities.data.ISFSObject;
 import com.smartfoxserver.v2.entities.data.SFSObject;
+
+import java.util.concurrent.ExecutionException;
 
 public class Client {
 
-    SmartFoxClient sfsClient = null;
+    private SmartFoxClient sfsClient = null;
 
     public void connect(Credentials credentials) {
 
@@ -16,7 +24,7 @@ public class Client {
         String clientVersion = authParams.get("client_version").asText();
 
         SFSObject loginParams = new SFSObject();
-        loginParams.putUtfString("access_key", Settings.ACCESS_KEY);
+        loginParams.putUtfString("access_key", Global.ACCESS_KEY);
         loginParams.putBool("attempt_recovery", false);
         loginParams.putUtfString("client_device", authParams.get("device_model").asText());
         loginParams.putUtfString("client_lang", "");
@@ -29,6 +37,33 @@ public class Client {
         loginParams.putUtfString("token", authResults.apiToken());
 
         sfsClient = new SmartFoxClient(authResults.serverIp(), authResults.userGameId(), loginParams);
+        var future = sfsClient.waitForEvent(event -> event.getCmd().equals("gs_initialized"));
+        sfsClient.connect();
+        try {
+            future.get();
+        }
+        catch (ExecutionException | InterruptedException ex) {
+            throw new InitializationFailed(ex);
+        }
+
+    }
+
+    public Player fetchPlayer() {
+
+        var params = new SFSObject();
+        params.putUtfString("last_updated", " 0");
+        ISFSObject data;
+        try {
+            data = sfsClient.requestResponse(
+                    "gs_player",
+                    params,
+                    event -> event.getCmd().equals("gs_player")
+            ).get().getSFSObject("player_object");
+        }
+        catch (ExecutionException | InterruptedException ex) {
+            throw new FetchFailed(ex);
+        }
+        return new Player(SfsMapper.mapObject(SfsPlayer.class, data));
 
     }
 

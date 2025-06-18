@@ -17,7 +17,7 @@
 | `island` | `long` | The ID (not the index) of the structure's island. |
 | `in_warehouse` | `int` | Whether the structure is warehoused (0/1). |
 | `is_complete` | `int` | Whether the structure is finished upgrading (0/1). |
-| `is_upgrading` | `bool` | Whether the structure is upgrading (0/1). |
+| `is_upgrading` | `int` | Whether the structure is upgrading (0/1). |
 | `muted` | `int` | Whether the structure is muted (0/1). |
 | `pos_x` | `int` | The $x$ position of the structure. |
 | `pos_y` | `int` | The $y$ position of the structure. |

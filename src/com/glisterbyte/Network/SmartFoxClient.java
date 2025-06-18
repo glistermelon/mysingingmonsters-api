@@ -10,6 +10,8 @@ import sfs2x.client.requests.*;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 class SmartFoxClient {
@@ -49,6 +51,22 @@ class SmartFoxClient {
 
     }
 
+    public static class ExtensionResponseListener {
+
+        public final String cmd;
+        private final Consumer<SFSObject> callback;
+
+        public ExtensionResponseListener(String cmd, Consumer<SFSObject> callback) {
+            this.cmd = cmd;
+            this.callback = callback;
+        }
+
+        public void call(SFSObject obj) {
+            callback.accept(obj);
+        }
+
+    }
+
     public static class ExtendedBaseEvent {
 
         BaseEvent baseEvent;
@@ -69,6 +87,10 @@ class SmartFoxClient {
             return (SFSObject)baseEvent.getArguments().get("params");
         }
 
+        public String toString() {
+            return "{ cmd: '" + getCmd() + "' }";
+        }
+
     }
 
     private static final Logger logger = LoggerFactory.getLogger(SmartFoxClient.class);
@@ -76,14 +98,17 @@ class SmartFoxClient {
     private final SmartFox server = new SmartFox();
 
     private final String userGameId;
+    private final String serverAddress;
     private final SFSObject loginParams;
 
     private final Object extensionResponseLock = new Object();
     private final List<ExtensionResponseWaiter> extensionResponseWaiters = new ArrayList<>();
+    private final List<ExtensionResponseListener> extensionResponseListeners = new ArrayList<>();
 
     public SmartFoxClient(String serverAddress, String userGameId, SFSObject loginParams) {
 
         this.userGameId = userGameId;
+        this.serverAddress = serverAddress;
         this.loginParams = loginParams;
 
         server.addEventListener(SFSEvent.CONNECTION, this::onConnection);
@@ -92,8 +117,14 @@ class SmartFoxClient {
         server.addEventListener(SFSEvent.LOGIN_ERROR, this::onLoginError);
         server.addEventListener(SFSEvent.EXTENSION_RESPONSE, this::onExtensionResponse);
 
-        server.connect(serverAddress, 9933);
+    }
 
+    public void connect() {
+        server.connect(serverAddress, 9933);
+    }
+
+    public void disconnect() {
+        server.disconnect();
     }
 
     private void onExtensionResponse(BaseEvent baseEvent) {
@@ -101,7 +132,15 @@ class SmartFoxClient {
         var event = new ExtendedBaseEvent(baseEvent);
 
         ExtensionResponseWaiter match = null;
+
         synchronized (extensionResponseLock) {
+
+            for (var listener : extensionResponseListeners) {
+                if (event.getCmd().equals(listener.cmd)) {
+                    listener.call(event.getParams());
+                }
+            }
+
             for (var waiter : extensionResponseWaiters) {
                 if (waiter.matches(event)) {
                     match = waiter;
@@ -109,10 +148,22 @@ class SmartFoxClient {
                 }
             }
             if (match != null) extensionResponseWaiters.remove(match);
+
         }
+
         if (match != null) match.complete(event.getParams());
         else logger.warn("Extension response did not match any waiters: {}", event);
 
+    }
+
+    public ExtensionResponseListener addEventListener(String cmd, Consumer<SFSObject> callback) {
+        ExtensionResponseListener listener = new ExtensionResponseListener(cmd, callback);
+        extensionResponseListeners.add(listener);
+        return listener;
+    }
+
+    public void removeEventListener(ExtensionResponseListener listener) {
+        extensionResponseListeners.remove(listener);
     }
 
     public CompletableFuture<SFSObject> requestResponse(
@@ -121,7 +172,15 @@ class SmartFoxClient {
     ) {
         synchronized (extensionResponseLock) {
             server.send(new ExtensionRequest(cmd, params));
-            var responseWaiter = new ExtensionResponseWaiter(matchResponse);
+            return waitForEvent(matchResponse);
+        }
+    }
+
+    public CompletableFuture<SFSObject> waitForEvent(
+            Predicate<ExtendedBaseEvent> match
+    ) {
+        synchronized (extensionResponseLock) {
+            var responseWaiter = new ExtensionResponseWaiter(match);
             extensionResponseWaiters.add(responseWaiter);
             return responseWaiter.getFuture();
         }

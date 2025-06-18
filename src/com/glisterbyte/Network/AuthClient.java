@@ -1,17 +1,13 @@
 package com.glisterbyte.Network;
 
-import com.glisterbyte.Configuration.Settings;
+import com.glisterbyte.Configuration.Global;
 import com.glisterbyte.Network.AuthClientException.AuthenticationFailed;
 import com.glisterbyte.Network.AuthClientException.GenerateAnonAccountFailed;
 
 import java.lang.Math;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.smartfoxserver.v2.entities.data.SFSObject;
 
 class AuthClient {
 
@@ -38,11 +34,11 @@ class AuthClient {
 
         StringBuilder id = new StringBuilder();
         for (int i = 0; i < 16; i++)
-            id.append(Settings.HEX_CHARS[(int) (16 * Math.random())]);
+            id.append(Global.HEX_CHARS[(int) (16 * Math.random())]);
 
         device.put("device_id", id.toString());
-        device.put("device_model", Settings.ANDROID_MODELS[(int)(Settings.ANDROID_MODELS.length * Math.random())]);
-        device.put("device_vendor", Settings.ANDROID_VENDORS[(int)(Settings.ANDROID_VENDORS.length * Math.random())]);
+        device.put("device_model", Global.ANDROID_MODELS[(int)(Global.ANDROID_MODELS.length * Math.random())]);
+        device.put("device_vendor", Global.ANDROID_VENDORS[(int)(Global.ANDROID_VENDORS.length * Math.random())]);
         device.put("os_version", "12");
         device.put("lang", "en");
 
@@ -57,7 +53,7 @@ class AuthClient {
         authData.put("g", 1);
         authData.put("advertiser_id", "");
         authData.put("auth_version", "2.0.0");
-        authData.put("client_version", Settings.GAME_VERSION_STRING);
+        authData.put("client_version", Global.GAME_VERSION_STRING);
         authData.put("package", ANDROID_PACKAGE);
         authData.put("platform", "android");
 
@@ -88,7 +84,7 @@ class AuthClient {
         headers.put("Accept", "*/*");
         headers.put("Accept-Encoding", "gzip, deflate");
         headers.put("User-Agent",
-                "MSM/" + Settings.GAME_VERSION_STRING
+                "MSM/" + Global.GAME_VERSION_STRING
                         + " (android; " + authenticationParams.get("os_version").asText() + ")"
         );
         headers.put("Content-Type", "application/x-www-form-urlencoded");
@@ -136,7 +132,7 @@ class AuthClient {
         headers.put("Accept", "*/*");
         headers.put("Accept-Encoding", "gzip, deflate");
         headers.put("User-Agent",
-                "MSM/" + Settings.GAME_VERSION_STRING
+                "MSM/" + Global.GAME_VERSION_STRING
                         + " (android; " + authenticationParams.get("os_version").asText() + ")"
         );
         headers.put("Content-Type", "application/x-www-form-urlencoded");
@@ -167,7 +163,7 @@ class AuthClient {
 
         ObjectNode params = authenticationParams.deepCopy();
         params.put("advertiser_id", "");
-        params.put("access_key", Settings.ACCESS_KEY);
+        params.put("access_key", Global.ACCESS_KEY);
         params.put("tcs", "1");
 
         String[] paramOrder = {
@@ -191,7 +187,7 @@ class AuthClient {
         headers.put("Accept", "*/*");
         headers.put("Accept-Encoding", "gzip, deflate, br");
         headers.put("User-Agent",
-                "MSM/" + Settings.GAME_VERSION_STRING
+                "MSM/" + Global.GAME_VERSION_STRING
                         + " (android; " + params.get("os_version").asText() + ")"
         );
         headers.put("Authorization", apiToken);

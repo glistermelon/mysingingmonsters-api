@@ -1,12 +1,16 @@
 package com.glisterbyte.SingingMonsters;
 
-import com.glisterbyte.SfsMapping.SfsOptional;
-import com.glisterbyte.SingingMonsters.SfsModels.SfsMonster;
-import com.glisterbyte.SingingMonsters.SfsModels.SfsStructure;
+import com.glisterbyte.Network.SfsClient;
+import com.glisterbyte.SingingMonsters.Binds.ClientBound;
+import com.glisterbyte.SingingMonsters.Binds.IslandBound;
+import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsStructure;
+import com.glisterbyte.SingingMonsters.Structures.Mine;
 
 import java.time.Instant;
 
-public class Structure {
+public class Structure extends IslandBound {
+
+    private final SfsStructure initialSfsModel;
 
     private Island island;
 
@@ -21,16 +25,29 @@ public class Structure {
     private boolean isUpgrading;
     private boolean isComplete;
 
-    public Structure(SfsStructure sfs, Island island) {
+    public Structure(Island island, SfsStructure sfsStructure) {
+        super(island);
+        initialSfsModel = sfsStructure;
         this.island = island;
-        dateCreated = sfs.dateCreated == null ? null : Instant.ofEpochMilli(sfs.dateCreated);
-        position = new Position(sfs.posX, sfs.posY);
-        flip = sfs.flip == 1;
-        muted = sfs.muted == 1;
-        scale = sfs.scale;
-        inWarehouse = sfs.inWarehouse == 1;
-        isUpgrading = sfs.isUpgrading == 1;
-        isComplete = sfs.isComplete == 1;
+        dateCreated = sfsStructure.dateCreated == null ? null : Instant.ofEpochMilli(sfsStructure.dateCreated);
+        position = new Position(sfsStructure.posX, sfsStructure.posY);
+        flip = sfsStructure.flip == 1;
+        muted = sfsStructure.muted == 1;
+        scale = sfsStructure.scale;
+        inWarehouse = sfsStructure.inWarehouse == 1;
+        isUpgrading = sfsStructure.isUpgrading == 1;
+        isComplete = sfsStructure.isComplete == 1;
+    }
+
+    public static Structure buildStructure(Island island, SfsStructure sfsStructure) {
+        return switch (StructureType.fromId(sfsStructure.structure)) {
+            case StructureType.UNKNOWN -> new Structure(island, sfsStructure);
+            case StructureType.MINE -> new Mine(island, sfsStructure);
+        };
+    }
+
+    public SfsStructure getInitialSfsModel() {
+        return initialSfsModel;
     }
 
     public Island getIsland() {

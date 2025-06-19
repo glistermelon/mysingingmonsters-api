@@ -1,6 +1,11 @@
 package com.glisterbyte.Network;
 
 import com.glisterbyte.Network.SmartFoxClientException.ConnectionFailed;
+import com.glisterbyte.SfsMapping.SfsMapper;
+import com.glisterbyte.SingingMonsters.SfsModels.Client.SfsExpectResponse;
+import com.glisterbyte.SingingMonsters.SfsModels.Client.SfsRequestModel;
+import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsResponseModel;
+import com.glisterbyte.SingingMonsters.SfsModels.SfsCmd;
 import com.smartfoxserver.v2.entities.data.SFSObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,11 +15,10 @@ import sfs2x.client.requests.*;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-class SmartFoxClient {
+public class SfsClient {
 
 //    private static class FakeSmartFox extends SmartFox {
 //        public FakeSmartFox() {
@@ -93,7 +97,7 @@ class SmartFoxClient {
 
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(SmartFoxClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(SfsClient.class);
 
     private final SmartFox server = new SmartFox();
 
@@ -105,7 +109,7 @@ class SmartFoxClient {
     private final List<ExtensionResponseWaiter> extensionResponseWaiters = new ArrayList<>();
     private final List<ExtensionResponseListener> extensionResponseListeners = new ArrayList<>();
 
-    public SmartFoxClient(String serverAddress, String userGameId, SFSObject loginParams) {
+    public SfsClient(String serverAddress, String userGameId, SFSObject loginParams) {
 
         this.userGameId = userGameId;
         this.serverAddress = serverAddress;
@@ -156,6 +160,13 @@ class SmartFoxClient {
 
     }
 
+    private void cancelEventWaiter(ExtensionResponseWaiter waiter) {
+        synchronized (extensionResponseLock) {
+            extensionResponseWaiters.remove(waiter);
+            waiter.getFuture().complete(null);
+        }
+    }
+
     public ExtensionResponseListener addEventListener(String cmd, Consumer<SFSObject> callback) {
         ExtensionResponseListener listener = new ExtensionResponseListener(cmd, callback);
         extensionResponseListeners.add(listener);
@@ -176,14 +187,58 @@ class SmartFoxClient {
         }
     }
 
-    public CompletableFuture<SFSObject> waitForEvent(
+    public CompletableFuture<List<SfsResponseModel>> requestResponses(SfsRequestModel request) {
+
+        synchronized (extensionResponseLock) {
+
+            server.send(new ExtensionRequest(
+                    request.getClass().getAnnotation(SfsCmd.class).value(),
+                    SfsMapper.mapToSFSObject(request)
+            ));
+
+            final List<ExtensionResponseWaiter> waiters = new ArrayList<>();
+            final List<CompletableFuture<SfsResponseModel>> futures = new ArrayList<>();
+            for (SfsExpectResponse expectedResponse
+                    : request.getClass().getAnnotationsByType(SfsExpectResponse.class)) {
+                var waiter = waitForEventWithWaiter(ev -> {
+                    String cmd = expectedResponse.value().getAnnotation(SfsCmd.class).value();
+                    return ev.getCmd().equals(cmd);
+                });
+                waiters.add(waiter);
+                final int waiterIndex = waiters.indexOf(waiter);
+                futures.add(waiter.getFuture().thenApply(params -> {
+                    if (params == null) return null;
+                    SfsResponseModel response = SfsMapper.mapSFSObjectToClass(expectedResponse.value(), params);
+                    if (response.failed()) {
+                        for (int i = waiterIndex + 1; i < waiters.size(); i++) {
+                            cancelEventWaiter(waiters.get(i));
+                        }
+                    }
+                    return response;
+                }));
+            }
+
+            CompletableFuture<Void> allFuture = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            return allFuture.thenApply(_ -> futures.stream().map(CompletableFuture::join).toList());
+
+        }
+
+    }
+
+    private ExtensionResponseWaiter waitForEventWithWaiter(
             Predicate<ExtendedBaseEvent> match
     ) {
         synchronized (extensionResponseLock) {
             var responseWaiter = new ExtensionResponseWaiter(match);
             extensionResponseWaiters.add(responseWaiter);
-            return responseWaiter.getFuture();
+            return responseWaiter;
         }
+    }
+
+    public CompletableFuture<SFSObject> waitForEvent(
+            Predicate<ExtendedBaseEvent> match
+    ) {
+        return waitForEventWithWaiter(match).getFuture();
     }
 
     private void onConnection(BaseEvent event) {

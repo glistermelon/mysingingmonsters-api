@@ -1,10 +1,10 @@
-package com.glisterbyte.SingingMonsters.SfsModels;
+package com.glisterbyte.SingingMonsters.SfsModels.Server;
 
 import com.glisterbyte.SfsMapping.SfsArrayElementType;
 
 import java.util.List;
 
-public class SfsPlayer {
+public class SfsPlayer extends SfsServerModel {
 
     // Skipped Keys:
     // achievements

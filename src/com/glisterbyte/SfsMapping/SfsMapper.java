@@ -4,8 +4,9 @@ import com.glisterbyte.SfsMapping.SfsMapperException.InaccessibleField;
 import com.glisterbyte.SfsMapping.SfsMapperException.InstantiationFailed;
 import com.glisterbyte.SfsMapping.SfsMapperException.MissingKey;
 import com.glisterbyte.SfsMapping.SfsMapperException.UnmappableType;
-import com.smartfoxserver.v2.entities.data.ISFSObject;
-import com.smartfoxserver.v2.entities.data.SFSDataType;
+import com.smartfoxserver.v2.entities.data.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -14,7 +15,9 @@ import java.util.List;
 
 public class SfsMapper {
 
-    public static <T> T mapObject(Class<T> tClass, ISFSObject sfsObject) {
+    private static final Logger logger = LoggerFactory.getLogger(SfsMapper.class);
+
+    public static <T> T mapSFSObjectToClass(Class<T> tClass, ISFSObject sfsObject) {
 
         T obj;
         try {
@@ -29,16 +32,25 @@ public class SfsMapper {
             throw new InstantiationFailed("Instantiating class '" + tClass.getName() + "' failed.", ex);
         }
 
-        for (Field field : tClass.getDeclaredFields()) {
+
+        for (Field field : getFields(tClass)) {
 
             // Uncomment this if this ever needs to work on non-public fields
             // field.setAccessible(true);
 
-            String key = field.isAnnotationPresent(SfsKey.class)
-                    ? field.getAnnotation(SfsKey.class).value()
-                    : camelToSnakeCase(field.getName());
+            if (field.isAnnotationPresent(SfsMapperIgnore.class)) continue;
 
             try {
+
+                if (field.isAnnotationPresent(SfsObjectField.class)) {
+                    field.set(obj, sfsObject);
+                    continue;
+                }
+
+                String key = field.isAnnotationPresent(SfsKey.class)
+                        ? field.getAnnotation(SfsKey.class).value()
+                        : camelToSnakeCase(field.getName());
+
                 if (!sfsObject.containsKey(key)) {
                     if (field.isAnnotationPresent(SfsOptional.class)) {
                         field.set(obj, null);
@@ -94,13 +106,28 @@ public class SfsMapper {
                     List<Object> list = new ArrayList<>();
                     var sfsArray = sfsObject.getSFSArray(key);
                     for (int i = 0; i < sfsArray.size(); i++) {
-                        list.add(mapObject(elementType, sfsArray.getSFSObject(i)));
+                        list.add(mapSFSObjectToClass(elementType, sfsArray.getSFSObject(i)));
                     }
                     field.set(obj, list);
+                }
+                else if (type.isAnnotationPresent(SfsPropertyArray.class)) {
+                    var value = sfsObject.get(key);
+                    if (value.getTypeId() != SFSDataType.SFS_ARRAY) {
+                        throw new MissingKey("Key lacks property SFS array value: '" + key + "'");
+                    }
+                    SFSArray array = (SFSArray)value.getObject();
+                    SFSObject properties = new SFSObject();
+                    for (int i = 0; i < array.size(); i++) {
+                        ISFSObject property = array.getSFSObject(i);
+                        var entry = property.iterator().next();
+                        properties.put(entry.getKey(), entry.getValue());
+                    }
+                    field.set(obj, mapSFSObjectToClass(type, properties));
                 }
                 else {
                     throw new UnmappableType("Unmappable type: '" + type.getName() + "'");
                 }
+
             }
             catch (IllegalAccessException ex) {
                 throw new InaccessibleField("Inaccessible field: '" + field.getName() + "'");
@@ -109,6 +136,105 @@ public class SfsMapper {
 
         return obj;
 
+    }
+
+    public static <T> SFSObject mapToSFSObject(T obj) {
+
+        SFSObject sfsObject = new SFSObject();
+
+        for (Field field : getFields(obj.getClass())) {
+
+            if (field.isAnnotationPresent(SfsMapperIgnore.class)) continue;
+
+            try {
+
+                Object value = field.get(obj);
+                if (value == null) continue;
+
+                String key = field.isAnnotationPresent(SfsKey.class)
+                        ? field.getAnnotation(SfsKey.class).value()
+                        : camelToSnakeCase(field.getName());
+
+                var type = field.getType();
+
+                if (type == int.class || type == Integer.class) {
+                    sfsObject.putInt(key, (Integer)value);
+                } else if (type == long.class || type == Long.class) {
+                    sfsObject.putLong(key, (Long)value);
+                } else if (type == short.class || type == Short.class) {
+                    sfsObject.putShort(key, (Short)value);
+                } else if (type == double.class || type == Double.class) {
+                    sfsObject.putDouble(key, (Double)value);
+                } else if (type == boolean.class || type == Boolean.class) {
+                    sfsObject.putBool(key, (Boolean)value);
+                } else if (type == String.class) {
+                    sfsObject.putUtfString(key, (String)value);
+                }
+                else if (List.class.isAssignableFrom(type)) {
+                    List<?> list = (List<?>)value;
+                    Class<?> elementType;
+                    if (field.isAnnotationPresent(SfsArrayElementType.class)) {
+                        elementType = field.getAnnotation(SfsArrayElementType.class).value();
+                    }
+                    else {
+                        logger.warn("""
+                                No element type notation present for field '{}';
+                                attempting to guess the type.""", field.getName());
+                        elementType = list.isEmpty() ? null : list.getFirst().getClass();
+                    }
+                    if (elementType == Integer.class) {
+                        @SuppressWarnings("unchecked")
+                        List<Integer> intList = (List<Integer>)value;
+                        sfsObject.putIntArray(key, intList);
+                    } else if (elementType == Long.class) {
+                        @SuppressWarnings("unchecked")
+                        List<Long> longList = (List<Long>)value;
+                        sfsObject.putLongArray(key, longList);
+                    } else if (elementType == Short.class) {
+                        @SuppressWarnings("unchecked")
+                        List<Short> shortList = (List<Short>)value;
+                        sfsObject.putShortArray(key, shortList);
+                    } else if (elementType == Double.class) {
+                        @SuppressWarnings("unchecked")
+                        List<Double> doubleList = (List<Double>)value;
+                        sfsObject.putDoubleArray(key, doubleList);
+                    } else if (elementType == Boolean.class) {
+                        @SuppressWarnings("unchecked")
+                        List<Boolean> boolList = (List<Boolean>)value;
+                        sfsObject.putBoolArray(key, boolList);
+                    } else if (elementType == String.class) {
+                        @SuppressWarnings("unchecked")
+                        List<String> stringList = (List<String>)value;
+                        sfsObject.putUtfStringArray(key, stringList);
+                    } else {
+                        SFSArray sfsArray = new SFSArray();
+                        for (Object element : list) {
+                            sfsArray.addSFSObject(mapToSFSObject(element));
+                        }
+                        sfsObject.putSFSArray(key, sfsArray);
+                    }
+                }
+                else {
+                    throw new UnmappableType("Unmappable type: '" + type.getName() + "'");
+                }
+
+            }
+            catch (IllegalAccessException ex) {
+                throw new InaccessibleField("Inaccessible field: '" + field.getName() + "'");
+            }
+        }
+
+        return sfsObject;
+
+    }
+
+    private static Iterable<Field> getFields(Class<?> _class) {
+        List<Field> fields = new ArrayList<>();
+        while (_class != null) {
+            fields.addAll(List.of(_class.getDeclaredFields()));
+            _class = _class.getSuperclass();
+        }
+        return fields;
     }
 
     private static String camelToSnakeCase(String input) {

@@ -1,11 +1,8 @@
-package com.glisterbyte.SingingMonsters.SfsModels;
+package com.glisterbyte.SingingMonsters.SfsModels.Server;
 
 import com.glisterbyte.SfsMapping.SfsOptional;
 
-public class SfsStructure {
-
-    // Skipped Keys:
-    // last_collection
+public class SfsStructure extends SfsServerModel {
 
     public int structure;
     public long island;
@@ -24,5 +21,8 @@ public class SfsStructure {
 
     public int isUpgrading;
     public int isComplete;
+
+    @SfsOptional
+    public Long lastCollection;
 
 }

@@ -2,7 +2,9 @@ package com.glisterbyte;
 
 import com.glisterbyte.Network.Client;
 import com.glisterbyte.Network.Credentials;
+import com.glisterbyte.SingingMonsters.IslandType;
 import com.glisterbyte.SingingMonsters.Player;
+import com.glisterbyte.SingingMonsters.Structures.Mine;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,6 +18,7 @@ public class Test {
         Client client = new Client();
         client.connect(credentials);
         Player player = client.fetchPlayer();
-        System.out.println("your name: " + player.getName());
+        Mine mine = player.getIsland(IslandType.PLANT_ISLAND).getMine();
+        mine.collect();
     }
 }

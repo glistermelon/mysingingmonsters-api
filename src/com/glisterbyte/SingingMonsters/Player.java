@@ -1,10 +1,15 @@
 package com.glisterbyte.SingingMonsters;
 
-import com.glisterbyte.SingingMonsters.SfsModels.SfsPlayer;
+import com.glisterbyte.Network.SfsClient;
+import com.glisterbyte.SingingMonsters.Binds.ClientBound;
+import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsPlayer;
+import com.glisterbyte.SingingMonsters.SfsModels.Server.UpdateStructure;
 
 import java.util.List;
 
-public class Player {
+public class Player extends ClientBound {
+
+    private final SfsPlayer initialSfsModel;
 
     private int uniqueId;
     private String country;
@@ -24,21 +29,47 @@ public class Player {
 
     private List<Island> islands;
 
-    public Player(SfsPlayer sfs) {
-        uniqueId = sfs.userId;
-        country = sfs.country;
-        displayName = sfs.displayName;
-        coins = sfs.coinsActual;
-        diamonds = sfs.diamondsActual;
-        diamondsSpent = sfs.diamondsSpent;
-        shards = sfs.etherealCurrencyActual;
-        food = sfs.foodActual;
-        keys = sfs.keysActual;
-        relics = sfs.relicsActual;
-        starpower = sfs.starpowerActual;
-        level = sfs.level;
-        xp = sfs.xp;
-        islands = sfs.islands.stream().map(Island::new).toList();
+    private Player(SfsClient sfsClient, SfsPlayer sfsPlayer) {
+        super(sfsClient);
+        initialSfsModel = sfsPlayer;
+        uniqueId = sfsPlayer.userId;
+        country = sfsPlayer.country;
+        displayName = sfsPlayer.displayName;
+        coins = sfsPlayer.coinsActual;
+        diamonds = sfsPlayer.diamondsActual;
+        diamondsSpent = sfsPlayer.diamondsSpent;
+        shards = sfsPlayer.etherealCurrencyActual;
+        food = sfsPlayer.foodActual;
+        keys = sfsPlayer.keysActual;
+        relics = sfsPlayer.relicsActual;
+        starpower = sfsPlayer.starpowerActual;
+        level = sfsPlayer.level;
+        xp = sfsPlayer.xp;
+        islands = sfsPlayer.islands.stream().map(
+                sfsIsland -> Island.buildIsland(this, sfsIsland)
+        ).toList();
+    }
+
+    public static Player buildPlayer(SfsClient sfsClient, SfsPlayer sfsPlayer) {
+        return new Player(sfsClient, sfsPlayer);
+    }
+
+    public void update(UpdateStructure.UpdateStructureProperties properties) {
+        coins = properties.coinsActual;
+        diamonds = properties.diamondsActual;
+        food = properties.foodActual;
+        shards = properties.etherealCurrencyActual;
+        keys = properties.keysActual;
+        relics = properties.relicsActual;
+        // skipped egg_wildcards_actual
+        starpower = properties.starpowerActual;
+        xp = properties.xp;
+        level = properties.level;
+        // skipped all other fields
+    }
+
+    public SfsPlayer getInitialSfsModel() {
+        return initialSfsModel;
     }
 
     public String getCountryCode() {
@@ -91,6 +122,19 @@ public class Player {
 
     public long getTotalXp() {
         return xp;
+    }
+
+    public List<Island> getIslands() {
+        return islands;
+    }
+
+    public Island getIsland(IslandType type) {
+        for (Island island : islands) {
+            if (island.getIslandType() == type) {
+                return island;
+            }
+        }
+        return null;
     }
 
 }

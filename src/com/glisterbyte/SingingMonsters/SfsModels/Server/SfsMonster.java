@@ -1,6 +1,6 @@
-package com.glisterbyte.SingingMonsters.SfsModels;
+package com.glisterbyte.SingingMonsters.SfsModels.Server;
 
-public class SfsMonster {
+public class SfsMonster extends SfsServerModel {
 
     // Skipped Keys:
     // all undetermined values @ commit 96e34ad045d3aa08f4cc8b79ea33cd2b3b4f7372

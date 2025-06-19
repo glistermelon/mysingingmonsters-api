@@ -5,7 +5,7 @@ import com.glisterbyte.Network.ClientException.FetchFailed;
 import com.glisterbyte.Network.ClientException.InitializationFailed;
 import com.glisterbyte.SfsMapping.SfsMapper;
 import com.glisterbyte.SingingMonsters.Player;
-import com.glisterbyte.SingingMonsters.SfsModels.SfsPlayer;
+import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsPlayer;
 import com.smartfoxserver.v2.entities.data.ISFSObject;
 import com.smartfoxserver.v2.entities.data.SFSObject;
 
@@ -13,7 +13,7 @@ import java.util.concurrent.ExecutionException;
 
 public class Client {
 
-    private SmartFoxClient sfsClient = null;
+    private SfsClient sfsClient = null;
 
     public void connect(Credentials credentials) {
 
@@ -36,7 +36,7 @@ public class Client {
         loginParams.putUtfString("raw_device_id", authParams.get("device_id").asText());
         loginParams.putUtfString("token", authResults.apiToken());
 
-        sfsClient = new SmartFoxClient(authResults.serverIp(), authResults.userGameId(), loginParams);
+        sfsClient = new SfsClient(authResults.serverIp(), authResults.userGameId(), loginParams);
         var future = sfsClient.waitForEvent(event -> event.getCmd().equals("gs_initialized"));
         sfsClient.connect();
         try {
@@ -63,7 +63,7 @@ public class Client {
         catch (ExecutionException | InterruptedException ex) {
             throw new FetchFailed(ex);
         }
-        return new Player(SfsMapper.mapObject(SfsPlayer.class, data));
+        return Player.buildPlayer(sfsClient, SfsMapper.mapSFSObjectToClass(SfsPlayer.class, data));
 
     }
 

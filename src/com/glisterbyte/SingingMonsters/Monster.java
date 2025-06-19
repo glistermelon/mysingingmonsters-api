@@ -1,10 +1,15 @@
 package com.glisterbyte.SingingMonsters;
 
-import com.glisterbyte.SingingMonsters.SfsModels.SfsMonster;
+import com.glisterbyte.Network.SfsClient;
+import com.glisterbyte.SingingMonsters.Binds.ClientBound;
+import com.glisterbyte.SingingMonsters.Binds.IslandBound;
+import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsMonster;
 
 import java.time.Instant;
 
-public class Monster {
+public class Monster extends IslandBound {
+
+    private final SfsMonster initialSfsModel;
 
     private Island island;
 
@@ -19,15 +24,25 @@ public class Monster {
     private Instant lastCollectTime;
     private Instant lastFeedTime;
     
-    public Monster(SfsMonster sfs, Island island) {
+    private Monster(Island island, SfsMonster sfsMonster) {
+        super(island);
+        initialSfsModel = sfsMonster;
         this.island = island;
-        position = new Position(sfs.posX, sfs.posY);
-        flip = sfs.flip == 1;
-        muted = sfs.muted == 1;
-        happiness = MonsterHappiness.fromPercentage(sfs.happiness);
-        inHotel = sfs.inHotel == 1;
-        lastCollectTime = Instant.ofEpochMilli(sfs.lastCollection);
-        lastFeedTime = Instant.ofEpochMilli(sfs.lastFeeding);
+        position = new Position(sfsMonster.posX, sfsMonster.posY);
+        flip = sfsMonster.flip == 1;
+        muted = sfsMonster.muted == 1;
+        happiness = MonsterHappiness.fromPercentage(sfsMonster.happiness);
+        inHotel = sfsMonster.inHotel == 1;
+        lastCollectTime = Instant.ofEpochMilli(sfsMonster.lastCollection);
+        lastFeedTime = Instant.ofEpochMilli(sfsMonster.lastFeeding);
+    }
+
+    public static Monster buildMonster(Island island, SfsMonster sfsMonster) {
+        return new Monster(island, sfsMonster);
+    }
+
+    public SfsMonster getInitialSfsModel() {
+        return initialSfsModel;
     }
 
     public Island getIsland() {

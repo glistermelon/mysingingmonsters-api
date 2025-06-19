@@ -78,7 +78,7 @@ public enum IslandType {
         };
     }
 
-    public static IslandType getTypeFromId(int id) {
+    public static IslandType fromId(int id) {
         return switch (id) {
             case 1 -> PLANT_ISLAND;
             case 2 -> COLD_ISLAND;

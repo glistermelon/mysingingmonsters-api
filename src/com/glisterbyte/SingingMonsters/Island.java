@@ -1,11 +1,15 @@
 package com.glisterbyte.SingingMonsters;
 
-import com.glisterbyte.SingingMonsters.SfsModels.SfsIsland;
+import com.glisterbyte.SingingMonsters.Binds.PlayerBound;
+import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsIsland;
+import com.glisterbyte.SingingMonsters.Structures.Mine;
 
 import java.time.Instant;
 import java.util.List;
 
-public class Island {
+public class Island extends PlayerBound {
+
+    private final SfsIsland initialSfsModel;
 
     private IslandType islandType;
     private long islandUniqueId;
@@ -21,16 +25,30 @@ public class Island {
     private List<Monster> monsters;
     private List<Structure> structures;
 
-    public Island(SfsIsland sfs) {
-        islandType = IslandType.getTypeFromId(sfs.island);
-        dateCreated = Instant.ofEpochMilli(sfs.dateCreated);
-        islandUniqueId = sfs.userIslandId;
-        likes = sfs.likes;
-        dislikes = sfs.dislikes;
-        lightTorchFlag = sfs.lightTorchFlag;
-        timeWarp = sfs.warpSpeed;
-        monsters = sfs.monsters.stream().map(sfsMonster -> new Monster(sfsMonster, this)).toList();
-        structures = sfs.structures.stream().map(sfsStructure -> new Structure(sfsStructure, this)).toList();
+    private Island(Player player, SfsIsland sfsIsland) {
+        super(player);
+        initialSfsModel = sfsIsland;
+        islandType = IslandType.fromId(sfsIsland.island);
+        dateCreated = Instant.ofEpochMilli(sfsIsland.dateCreated);
+        islandUniqueId = sfsIsland.userIslandId;
+        likes = sfsIsland.likes;
+        dislikes = sfsIsland.dislikes;
+        lightTorchFlag = sfsIsland.lightTorchFlag;
+        timeWarp = sfsIsland.warpSpeed;
+        monsters = sfsIsland.monsters.stream().map(
+                sfsMonster -> Monster.buildMonster(this, sfsMonster)
+        ).toList();
+        structures = sfsIsland.structures.stream().map(
+                sfsStructure -> Structure.buildStructure(this, sfsStructure)
+        ).toList();
+    }
+
+    public static Island buildIsland(Player player, SfsIsland sfsIsland) {
+        return new Island(player, sfsIsland);
+    }
+
+    public SfsIsland getInitialSfsModel() {
+        return initialSfsModel;
     }
 
     public IslandType getIslandType() {
@@ -59,6 +77,24 @@ public class Island {
 
     public double getTimeWarp() {
         return timeWarp;
+    }
+
+
+    public List<Monster> getMonsters() {
+        return monsters;
+    }
+
+    public List<Structure> getStructures() {
+        return structures;
+    }
+
+    public Mine getMine() {
+        for (Structure structure : structures) {
+            if (structure instanceof Mine) {
+                return (Mine)structure;
+            }
+        }
+        return null;
     }
 
 }

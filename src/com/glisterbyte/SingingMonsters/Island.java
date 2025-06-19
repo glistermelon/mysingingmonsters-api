@@ -12,7 +12,7 @@ public class Island extends PlayerBound {
     private final SfsIsland initialSfsModel;
 
     private IslandType islandType;
-    private long islandUniqueId;
+    private long uniqueId;
     private Instant dateCreated;
 
     private int likes;
@@ -30,7 +30,7 @@ public class Island extends PlayerBound {
         initialSfsModel = sfsIsland;
         islandType = IslandType.fromId(sfsIsland.island);
         dateCreated = Instant.ofEpochMilli(sfsIsland.dateCreated);
-        islandUniqueId = sfsIsland.userIslandId;
+        uniqueId = sfsIsland.userIslandId;
         likes = sfsIsland.likes;
         dislikes = sfsIsland.dislikes;
         lightTorchFlag = sfsIsland.lightTorchFlag;
@@ -53,6 +53,10 @@ public class Island extends PlayerBound {
 
     public IslandType getIslandType() {
         return islandType;
+    }
+
+    public long getUniqueId() {
+        return uniqueId;
     }
 
     public Instant getStartDate() {

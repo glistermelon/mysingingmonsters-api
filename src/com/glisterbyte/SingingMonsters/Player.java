@@ -2,10 +2,17 @@ package com.glisterbyte.SingingMonsters;
 
 import com.glisterbyte.Network.SfsClient;
 import com.glisterbyte.SingingMonsters.Binds.ClientBound;
-import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsPlayer;
-import com.glisterbyte.SingingMonsters.SfsModels.Server.UpdateStructure;
+import com.glisterbyte.SingingMonsters.SfsModels.Client.ChangeIslandFailed;
+import com.glisterbyte.SingingMonsters.SfsModels.Client.ChangeIslandRequest;
+import com.glisterbyte.SingingMonsters.SfsModels.Client.CollectMineFailed;
+import com.glisterbyte.SingingMonsters.SfsModels.Client.CollectMineRequest;
+import com.glisterbyte.SingingMonsters.SfsModels.Server.*;
+import com.glisterbyte.SingingMonsters.Structures.Mine;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class Player extends ClientBound {
 
@@ -28,9 +35,12 @@ public class Player extends ClientBound {
     private int xp;
 
     private List<Island> islands;
+    private Island activeIsland;
 
     private Player(SfsClient sfsClient, SfsPlayer sfsPlayer) {
+
         super(sfsClient);
+
         initialSfsModel = sfsPlayer;
         uniqueId = sfsPlayer.userId;
         country = sfsPlayer.country;
@@ -45,9 +55,18 @@ public class Player extends ClientBound {
         starpower = sfsPlayer.starpowerActual;
         level = sfsPlayer.level;
         xp = sfsPlayer.xp;
+
         islands = sfsPlayer.islands.stream().map(
                 sfsIsland -> Island.buildIsland(this, sfsIsland)
         ).toList();
+
+        for (Island island : islands) {
+            if (island.getUniqueId() == sfsPlayer.activeIsland) {
+                activeIsland = island;
+                break;
+            }
+        }
+
     }
 
     public static Player buildPlayer(SfsClient sfsClient, SfsPlayer sfsPlayer) {
@@ -135,6 +154,72 @@ public class Player extends ClientBound {
             }
         }
         return null;
+    }
+
+    public Island getActiveIsland() {
+        return activeIsland;
+    }
+
+    public void setActiveIsland(long islandUniqueId) {
+
+        // API returns failed response with no error message if
+        // you try to switch to the island you're already on
+        if (islandUniqueId == activeIsland.getUniqueId()) return;
+
+        ChangeIslandRequest request = new ChangeIslandRequest();
+        request.userIslandId = islandUniqueId;
+
+        ChangeIslandResponse response;
+        try {
+            response = (ChangeIslandResponse) sfsClient.requestResponses(request).get().getFirst();
+        } catch (InterruptedException | ExecutionException ex) {
+            throw new ChangeIslandFailed("", ex);
+        }
+
+        if (response.failed()) throw new ChangeIslandFailed(response.message);
+
+    }
+
+    public void setActiveIsland(Island island) {
+        setActiveIsland(island.getUniqueId());
+    }
+
+    public void setActiveIsland(IslandType islandType) {
+        Island island = getIsland(islandType);
+        if (island == null) throw new ChangeIslandFailed("Cannot switch to unowned island: " + islandType);
+        setActiveIsland(island);
+    }
+
+    // TODO: successful collection has not been tested yet
+    public void collectMineOnActiveIsland() {
+
+        CollectMineResponse mainResponse;
+        UpdateStructure updateStructure;
+
+        try {
+            List<SfsResponseModel> responses = sfsClient.requestResponses(new CollectMineRequest()).get();
+            mainResponse = (CollectMineResponse)responses.getFirst();
+            updateStructure = (UpdateStructure)responses.get(1);
+        }
+        catch (ExecutionException | InterruptedException | IndexOutOfBoundsException ex) {
+            throw new CollectMineFailed("", ex);
+        }
+
+        if (mainResponse.failed()) {
+            throw new CollectMineFailed(mainResponse.message);
+        }
+
+        update(updateStructure.properties);
+
+        Mine mine = activeIsland.getMine();
+        if (mine != null) mine.update(updateStructure.properties);
+
+    }
+
+    public boolean isMineOnActiveIslandReady() {
+        Mine mine = activeIsland.getMine();
+        if (mine == null) return false;
+        return mine.isReady();
     }
 
 }

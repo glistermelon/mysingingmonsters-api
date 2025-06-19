@@ -12,8 +12,6 @@ public class Structure extends IslandBound {
 
     private final SfsStructure initialSfsModel;
 
-    private Island island;
-
     private Instant dateCreated;
 
     private Position position;
@@ -28,7 +26,6 @@ public class Structure extends IslandBound {
     public Structure(Island island, SfsStructure sfsStructure) {
         super(island);
         initialSfsModel = sfsStructure;
-        this.island = island;
         dateCreated = sfsStructure.dateCreated == null ? null : Instant.ofEpochMilli(sfsStructure.dateCreated);
         position = new Position(sfsStructure.posX, sfsStructure.posY);
         flip = sfsStructure.flip == 1;

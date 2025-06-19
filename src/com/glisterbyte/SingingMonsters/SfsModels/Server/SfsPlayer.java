@@ -40,4 +40,6 @@ public class SfsPlayer extends SfsServerModel {
     @SfsArrayElementType(SfsIsland.class)
     public List<SfsIsland> islands;
 
+    public long activeIsland;
+
 }

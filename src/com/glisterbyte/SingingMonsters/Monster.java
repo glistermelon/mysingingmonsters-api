@@ -11,8 +11,6 @@ public class Monster extends IslandBound {
 
     private final SfsMonster initialSfsModel;
 
-    private Island island;
-
     private Position position;
     private boolean flip;
     private boolean muted;
@@ -27,7 +25,6 @@ public class Monster extends IslandBound {
     private Monster(Island island, SfsMonster sfsMonster) {
         super(island);
         initialSfsModel = sfsMonster;
-        this.island = island;
         position = new Position(sfsMonster.posX, sfsMonster.posY);
         flip = sfsMonster.flip == 1;
         muted = sfsMonster.muted == 1;

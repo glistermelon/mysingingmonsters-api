@@ -26,6 +26,7 @@ Analysis of `game::Player::initWithSFSObject` shows that there may be more undoc
 | Key | Value Type | Value Description | Known/Example Values |
 |-|-|-|-|
 | `achievements` | `sfs_array` | Any array of [achievements](player/achievement). | |
+| `active_island` | `long` | The unique ID (not index) of the user's active island. |
 | `active_island_themes` | `sfs_array` | The user's active island themes. Nothing currently known about the value structure because there are no known examples besides an empty array. |
 | `bbb_id` | `long` | User's BigBlueBubble ID |
 | `country` | `utf_string` | Likely the home country recorded for the user, in [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) format. | `US` |
@@ -104,7 +105,6 @@ Analysis of `game::Player::initWithSFSObject` shows that there may be more undoc
 | `third_party_ads` | `bool` |
 | `third_party_video_ads` | `bool` |
 | `prev_rank` | `long` |
-| `active_island` | `long` | A big-ass number, so not an island index. |
 | `battle` | `sfs_object` |
 | `fb_invite_reward` | `int` |
 | `perma_campaigns_viewed` | `int_array` |

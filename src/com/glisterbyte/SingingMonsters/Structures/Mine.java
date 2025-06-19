@@ -1,17 +1,12 @@
 package com.glisterbyte.SingingMonsters.Structures;
 
 import com.glisterbyte.SingingMonsters.Island;
-import com.glisterbyte.SingingMonsters.SfsModels.Client.CollectMineFailed;
-import com.glisterbyte.SingingMonsters.SfsModels.Client.CollectMineRequest;
-import com.glisterbyte.SingingMonsters.SfsModels.Server.CollectMineResponse;
-import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsResponseModel;
 import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsStructure;
 import com.glisterbyte.SingingMonsters.SfsModels.Server.UpdateStructure;
 import com.glisterbyte.SingingMonsters.Structure;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class Mine extends Structure {
 
@@ -26,32 +21,21 @@ public class Mine extends Structure {
         lastCollectTime = Instant.ofEpochMilli(epochMilli);
     }
 
+    public void update(UpdateStructure.UpdateStructureProperties properties) {
+        setLastCollectTime(properties.lastCollection);
+    }
+
     public Instant getLastCollectTime() {
         return lastCollectTime;
     }
 
-    // TODO: successful collection has not been tested yet
     public void collect() {
+        player.setActiveIsland(island);
+        player.collectMineOnActiveIsland();
+    }
 
-        CollectMineResponse mainResponse;
-        UpdateStructure updateStructure;
-
-        try {
-            List<SfsResponseModel> responses = sfsClient.requestResponses(new CollectMineRequest()).get();
-            mainResponse = (CollectMineResponse)responses.getFirst();
-            updateStructure = (UpdateStructure)responses.get(1);
-        }
-        catch (ExecutionException | InterruptedException | IndexOutOfBoundsException ex) {
-            throw new CollectMineFailed("", ex);
-        }
-
-        if (mainResponse.failed()) {
-            throw new CollectMineFailed(mainResponse.message);
-        }
-
-        setLastCollectTime(updateStructure.properties.lastCollection);
-        player.update(updateStructure.properties);
-
+    public boolean isReady() {
+        return Duration.between(lastCollectTime, Instant.now()).toHours() >= 24;
     }
 
 }

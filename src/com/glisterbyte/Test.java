@@ -18,7 +18,7 @@ public class Test {
         Client client = new Client();
         client.connect(credentials);
         Player player = client.fetchPlayer();
-        Mine mine = player.getIsland(IslandType.PLANT_ISLAND).getMine();
-        mine.collect();
+        player.setActiveIsland(IslandType.PLANT_ISLAND);
+        System.out.println(player.isMineOnActiveIslandReady());
     }
 }

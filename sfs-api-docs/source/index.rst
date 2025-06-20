@@ -5,6 +5,7 @@ msm-api-docs documentation
    :maxdepth: 1
    :caption: Commands
 
+   undocumented
    commands/gs_buy_island
    commands/gs_change_island
    commands/gs_collect_from_mine
@@ -14,7 +15,6 @@ msm-api-docs documentation
    :maxdepth: 1
    :caption: Data
 
-   undocumented
    data/player
    data/island
    data/structure

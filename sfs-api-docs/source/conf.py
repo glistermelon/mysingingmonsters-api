@@ -26,6 +26,10 @@ source_suffix = {
 templates_path = ['_templates']
 exclude_patterns = []
 
+myst_enable_extensions = [
+    'amsmath',
+    'dollarmath'
+]
 
 
 # -- Options for HTML output -------------------------------------------------

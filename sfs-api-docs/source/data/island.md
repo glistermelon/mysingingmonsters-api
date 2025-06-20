@@ -27,7 +27,7 @@ Keys beginning with `tribal` are only present in Tribal Island data.
 |-|-|-|
 | `date_created` | `long` | When the player got the island, in unix millseconds. |
 | `dislikes` | `int` | How many dislikes the island has. |
-| `island` | `int` | The index of the island (see below). |
+| `island` | `int` | The [type ID](#island-type-ids) of the island. |
 | `light_torch_flag` | `bool` | Whether the island is marked for torches to be lit by friends. |
 | `likes` | `int` | How many likes the island has. |
 | `monsters` | `sfs_array` | An array of [monsters](monster). |
@@ -40,13 +40,14 @@ Keys beginning with `tribal` are only present in Tribal Island data.
 | `user_island_id` | `long` | The island's ID. |
 | `warp_speed` | `double` | The time warp multiplier. |
 
-### Island Indices
+(island-type-ids)=
+### Island Type IDs
 
 ```{warning}
 I don't know if these actually correspond correctly but if anyone really wants to get into the decompilation to find out, check out `game::player::addIsland`. I got these numbers by decompiling `assets/scripts/IslandData.lua`.
 ```
 
-| Index | Name |
+| Type ID | Name |
 |-|-|
 | 1 | Plant Island |
 | 2 | Cold Island |

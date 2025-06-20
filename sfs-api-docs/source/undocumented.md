@@ -17,13 +17,11 @@ The below were extracted from the ARMv8 Android shared object file by Ghidra.
 `0065b678` | `gs_box_purchase_fill`
 `006890cd` | `gs_breed_monsters`
 `0067773d` | `gs_buy_egg`
-`0067fef4` | `gs_buy_island`
 `0062d51c` | `gs_buy_structure`
 `0062d52d` | `gs_buy_tile`
 `00652260` | `gs_cancel_tribe_invite`
 `0062462f` | `gs_cancel_tribe_request`
 `0062460f` | `gs_cant_breed`
-`0068e2f8` | `gs_change_island`
 `00648e84` | `gs_clear_obstacle`
 `0067ff02` | `gs_clear_obstacle_speed_up`
 `0063b6f4` | `gs_client_version_error`
@@ -32,7 +30,6 @@ The below were extracted from the ARMv8 Android shared object file by Ghidra.
 `00696aaa` | `gs_collect_daily_reward`
 `0067bd5b` | `gs_collect_flip_level`
 `006521a0` | `gs_collect_flip_mini_game`
-`00648e6f` | `gs_collect_from_mine`
 `0061f8bb` | `gs_collect_invite_reward`
 `006644a2` | `gs_collect_memory_mini_game`
 `0065b665` | `gs_collect_monster`
@@ -107,7 +104,6 @@ The below were extracted from the ARMv8 Android shared object file by Ghidra.
 `00644ab1` | `gs_place_on_tribal`
 `0062d539` | `gs_play_memory_mini_game`
 `00624647` | `gs_play_scratch_off`
-`00689084` | `gs_player`
 `00648e20` | `gs_player_banned`
 `00648e96` | `gs_player_has_scratch_off`
 `0067bdfb` | `gs_process_unclaimed_codes`

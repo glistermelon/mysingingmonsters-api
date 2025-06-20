@@ -5,6 +5,7 @@ import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsIsland;
 import com.glisterbyte.SingingMonsters.Structures.Mine;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Island extends PlayerBound {
@@ -22,11 +23,13 @@ public class Island extends PlayerBound {
 
     private double timeWarp;
 
-    private List<Monster> monsters;
-    private List<Structure> structures;
+    private final List<Monster> monsters = new ArrayList<>();
+    private final List<Structure> structures = new ArrayList<>();
 
     private Island(Player player, SfsIsland sfsIsland) {
+
         super(player);
+
         initialSfsModel = sfsIsland;
         islandType = IslandType.fromId(sfsIsland.island);
         dateCreated = Instant.ofEpochMilli(sfsIsland.dateCreated);
@@ -35,12 +38,15 @@ public class Island extends PlayerBound {
         dislikes = sfsIsland.dislikes;
         lightTorchFlag = sfsIsland.lightTorchFlag;
         timeWarp = sfsIsland.warpSpeed;
-        monsters = sfsIsland.monsters.stream().map(
-                sfsMonster -> Monster.buildMonster(this, sfsMonster)
-        ).toList();
-        structures = sfsIsland.structures.stream().map(
-                sfsStructure -> Structure.buildStructure(this, sfsStructure)
-        ).toList();
+
+        for (var sfsMonster : sfsIsland.monsters) {
+            monsters.add(Monster.buildMonster(this, sfsMonster));
+        }
+
+        for (var sfsStructure : sfsIsland.structures) {
+            structures.add(Structure.buildStructure(this, sfsStructure));
+        }
+
     }
 
     public static Island buildIsland(Player player, SfsIsland sfsIsland) {

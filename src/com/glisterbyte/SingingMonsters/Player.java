@@ -2,19 +2,20 @@ package com.glisterbyte.SingingMonsters;
 
 import com.glisterbyte.Network.SfsClient;
 import com.glisterbyte.SingingMonsters.Binds.ClientBound;
-import com.glisterbyte.SingingMonsters.SfsModels.Client.ChangeIslandFailed;
-import com.glisterbyte.SingingMonsters.SfsModels.Client.ChangeIslandRequest;
-import com.glisterbyte.SingingMonsters.SfsModels.Client.CollectMineFailed;
-import com.glisterbyte.SingingMonsters.SfsModels.Client.CollectMineRequest;
+import com.glisterbyte.SingingMonsters.SfsModels.Client.*;
 import com.glisterbyte.SingingMonsters.SfsModels.Server.*;
 import com.glisterbyte.SingingMonsters.Structures.Mine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 public class Player extends ClientBound {
+
+    private static final Logger logger = LoggerFactory.getLogger(Player.class);
 
     private final SfsPlayer initialSfsModel;
 
@@ -34,7 +35,7 @@ public class Player extends ClientBound {
     private int level;
     private int xp;
 
-    private List<Island> islands;
+    private final List<Island> islands = new ArrayList<>();
     private Island activeIsland;
 
     private Player(SfsClient sfsClient, SfsPlayer sfsPlayer) {
@@ -56,9 +57,9 @@ public class Player extends ClientBound {
         level = sfsPlayer.level;
         xp = sfsPlayer.xp;
 
-        islands = sfsPlayer.islands.stream().map(
-                sfsIsland -> Island.buildIsland(this, sfsIsland)
-        ).toList();
+        for (var sfsIsland : sfsPlayer.islands) {
+            islands.add(Island.buildIsland(this, sfsIsland));
+        }
 
         for (Island island : islands) {
             if (island.getUniqueId() == sfsPlayer.activeIsland) {
@@ -73,7 +74,7 @@ public class Player extends ClientBound {
         return new Player(sfsClient, sfsPlayer);
     }
 
-    public void update(UpdateStructure.UpdateStructureProperties properties) {
+    public void update(Update properties) {
         coins = properties.coinsActual;
         diamonds = properties.diamondsActual;
         food = properties.foodActual;
@@ -171,12 +172,12 @@ public class Player extends ClientBound {
 
         ChangeIslandResponse response;
         try {
-            response = (ChangeIslandResponse) sfsClient.requestResponses(request).get().getFirst();
+            response = (ChangeIslandResponse)sfsClient.requestResponses(request).get().getFirst();
         } catch (InterruptedException | ExecutionException ex) {
             throw new ChangeIslandFailed("", ex);
         }
 
-        if (response.failed()) throw new ChangeIslandFailed(response.message);
+        if (response.failed()) throw new ChangeIslandFailed();
 
     }
 
@@ -220,6 +221,59 @@ public class Player extends ClientBound {
         Mine mine = activeIsland.getMine();
         if (mine == null) return false;
         return mine.isReady();
+    }
+
+    public Island buyIsland(int typeId, String name) {
+
+        if (typeId == IslandType.TRIBAL_ISLAND.getId() && name.isBlank()) {
+            throw new BuyIslandFailed("A name must be specified to buy Tribal Island");
+        }
+
+        if (typeId != IslandType.TRIBAL_ISLAND.getId() && name != null && !name.isEmpty()) {
+            logger.warn("Name parameter (probably) has no effect when buying islands other than Tribal Island");
+        }
+
+        BuyIslandRequest request = new BuyIslandRequest();
+        request.islandId = typeId;
+        request.islandName = name;
+        request.starpowerPurchase = false;
+
+        BuyIslandResponse response;
+        try {
+            response = (BuyIslandResponse)sfsClient.requestResponses(request).get().getFirst();
+        }
+        catch (ExecutionException | InterruptedException | IndexOutOfBoundsException ex) {
+            throw new BuyIslandFailed("", ex);
+        }
+
+        if (response.failed()) {
+            throw new BuyIslandFailed(response.message);
+        }
+
+        update(response.properties);
+
+        Island island = Island.buildIsland(this, response.userIsland);
+        islands.add(island);
+
+        return island;
+
+        // TODO
+        // If this is ever documented, note that
+        // the actual game will switch to the new island
+        // as the active island afterwards, always.
+
+    }
+
+    public Island buyIsland(IslandType islandType, String name) {
+        return buyIsland(islandType.getId(), name);
+    }
+
+    public Island buyIsland(int typeId) {
+        return buyIsland(typeId, "");
+    }
+
+    public Island buyIsland(IslandType islandType) {
+        return buyIsland(islandType.getId());
     }
 
 }

@@ -4,11 +4,13 @@ import com.glisterbyte.Network.Client;
 import com.glisterbyte.Network.Credentials;
 import com.glisterbyte.SingingMonsters.IslandType;
 import com.glisterbyte.SingingMonsters.Player;
+import com.glisterbyte.SingingMonsters.SfsModels.Client.BuyIslandFailed;
 import com.glisterbyte.SingingMonsters.Structures.Mine;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 
 public class Test {
     public static void main(String[] args) throws IOException {
@@ -18,7 +20,5 @@ public class Test {
         Client client = new Client();
         client.connect(credentials);
         Player player = client.fetchPlayer();
-        player.setActiveIsland(IslandType.PLANT_ISLAND);
-        System.out.println(player.isMineOnActiveIslandReady());
     }
 }

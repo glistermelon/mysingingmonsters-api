@@ -4,6 +4,7 @@ import com.glisterbyte.SfsMapping.SfsMapperException.InaccessibleField;
 import com.glisterbyte.SfsMapping.SfsMapperException.InstantiationFailed;
 import com.glisterbyte.SfsMapping.SfsMapperException.MissingKey;
 import com.glisterbyte.SfsMapping.SfsMapperException.UnmappableType;
+import com.glisterbyte.SingingMonsters.SfsModels.Server.BuyIslandResponse;
 import com.smartfoxserver.v2.entities.data.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,6 +124,13 @@ public class SfsMapper {
                         properties.put(entry.getKey(), entry.getValue());
                     }
                     field.set(obj, mapSFSObjectToClass(type, properties));
+                }
+                else if (!type.isPrimitive()) {
+                    var value = sfsObject.get(key);
+                    if (value.getTypeId() != SFSDataType.SFS_OBJECT) {
+                        throw new MissingKey("Key lacks SFS object value: '" + key + "'");
+                    }
+                    field.set(obj, mapSFSObjectToClass(type, (ISFSObject)value.getObject()));
                 }
                 else {
                     throw new UnmappableType("Unmappable type: '" + type.getName() + "'");

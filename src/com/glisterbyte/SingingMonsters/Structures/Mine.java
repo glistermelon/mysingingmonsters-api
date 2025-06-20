@@ -2,7 +2,7 @@ package com.glisterbyte.SingingMonsters.Structures;
 
 import com.glisterbyte.SingingMonsters.Island;
 import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsStructure;
-import com.glisterbyte.SingingMonsters.SfsModels.Server.UpdateStructure;
+import com.glisterbyte.SingingMonsters.SfsModels.Server.Update;
 import com.glisterbyte.SingingMonsters.Structure;
 
 import java.time.Duration;
@@ -21,8 +21,8 @@ public class Mine extends Structure {
         lastCollectTime = Instant.ofEpochMilli(epochMilli);
     }
 
-    public void update(UpdateStructure.UpdateStructureProperties properties) {
-        setLastCollectTime(properties.lastCollection);
+    public void update(Update properties) {
+        if (properties.lastCollection != null) setLastCollectTime(properties.lastCollection);
     }
 
     public Instant getLastCollectTime() {

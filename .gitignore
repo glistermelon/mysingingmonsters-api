@@ -10,3 +10,4 @@ apk/
 
 ### Documentation ###
 sfs-api-docs/build
+sfs-api-docs/source/commands/startup

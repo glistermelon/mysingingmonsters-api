@@ -11,4 +11,8 @@ public class IslandBound extends PlayerBound {
         this.island = island;
     }
 
+    public final Island getIsland() {
+        return island;
+    }
+
 }

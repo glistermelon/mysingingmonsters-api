@@ -12,7 +12,9 @@ public class Structure extends IslandBound {
 
     private final SfsStructure initialSfsModel;
 
-    private Instant dateCreated;
+    private final StructureType structureType;
+
+    private final Instant dateCreated;
 
     private Position position;
     private boolean flip;
@@ -26,6 +28,7 @@ public class Structure extends IslandBound {
     public Structure(Island island, SfsStructure sfsStructure) {
         super(island);
         initialSfsModel = sfsStructure;
+        structureType = StructureType.fromId(sfsStructure.structure);
         dateCreated = sfsStructure.dateCreated == null ? null : Instant.ofEpochMilli(sfsStructure.dateCreated);
         position = new Position(sfsStructure.posX, sfsStructure.posY);
         flip = sfsStructure.flip == 1;
@@ -37,9 +40,10 @@ public class Structure extends IslandBound {
     }
 
     public static Structure buildStructure(Island island, SfsStructure sfsStructure) {
-        return switch (StructureType.fromId(sfsStructure.structure)) {
-            case StructureType.UNKNOWN -> new Structure(island, sfsStructure);
-            case StructureType.MINE -> new Mine(island, sfsStructure);
+        StructureCategory category = StructureType.fromId(sfsStructure.structure).getStructureCategory();
+        return switch (category) {
+            case StructureCategory.MINE -> new Mine(island, sfsStructure);
+            default -> new Structure(island, sfsStructure);
         };
     }
 
@@ -47,8 +51,8 @@ public class Structure extends IslandBound {
         return initialSfsModel;
     }
 
-    public Island getIsland() {
-        return island;
+    public StructureType getStructureType() {
+        return structureType;
     }
 
     public Instant getDateCreated() {

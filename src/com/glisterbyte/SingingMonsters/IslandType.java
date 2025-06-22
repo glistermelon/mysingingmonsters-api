@@ -1,5 +1,9 @@
 package com.glisterbyte.SingingMonsters;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public enum IslandType {
 
     PLANT_ISLAND,
@@ -117,6 +121,46 @@ public enum IslandType {
             case 118 -> MIRROR_LIGHT_ISLAND;
             default -> throw new IllegalArgumentException("Unrecognized island ID: " + id);
         };
+    }
+
+    public static List<IslandType> allIslandTypes() {
+        return Arrays.asList(
+            PLANT_ISLAND,
+            COLD_ISLAND,
+            AIR_ISLAND,
+            WATER_ISLAND,
+            EARTH_ISLAND,
+            GOLD_ISLAND,
+            ETHEREAL_ISLAND,
+            SHUGABUSH_ISLAND,
+            TRIBAL_ISLAND,
+            WUBLIN_ISLAND,
+            COMPOSER_ISLAND,
+            CELESTIAL_ISLAND,
+            FIRE_HAVEN,
+            FIRE_OASIS,
+            PSYCHIC_ISLAND,
+            FAERIE_ISLAND,
+            BONE_ISLAND,
+            LIGHT_ISLAND,
+            MAGICAL_SANCTUM,
+            THE_COLOSSINGUM,
+            SEASONAL_SHANTY,
+            AMBER_ISLAND,
+            MYTHICAL_ISLAND,
+            ETHEREAL_WORKSHOP,
+            MAGICAL_NEXUS,
+            PLASMA_ISLET,
+            MIRROR_PLANT_ISLAND,
+            MIRROR_COLD_ISLAND,
+            MIRROR_AIR_ISLAND,
+            MIRROR_WATER_ISLAND,
+            MIRROR_EARTH_ISLAND,
+            MIRROR_PSYCHIC_ISLAND,
+            MIRROR_FAERIE_ISLAND,
+            MIRROR_BONE_ISLAND,
+            MIRROR_LIGHT_ISLAND
+        );
     }
 
 }

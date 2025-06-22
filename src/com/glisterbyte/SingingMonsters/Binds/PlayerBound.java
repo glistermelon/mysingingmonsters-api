@@ -11,4 +11,8 @@ public class PlayerBound extends ClientBound {
         this.player = player;
     }
 
+    public final Player getPlayer() {
+        return player;
+    }
+
 }

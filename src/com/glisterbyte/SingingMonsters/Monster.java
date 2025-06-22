@@ -42,10 +42,6 @@ public class Monster extends IslandBound {
         return initialSfsModel;
     }
 
-    public Island getIsland() {
-        return island;
-    }
-
     public Position getPosition() {
         return position;
     }

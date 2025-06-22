@@ -1,9 +1,12 @@
 package com.glisterbyte.Network;
 
 import com.glisterbyte.Configuration.Global;
+import com.glisterbyte.Localization.Language;
+import com.glisterbyte.Localization.LocalizedResources;
 import com.glisterbyte.Network.ClientException.FetchFailed;
 import com.glisterbyte.Network.ClientException.InitializationFailed;
 import com.glisterbyte.SfsMapping.SfsMapper;
+import com.glisterbyte.SingingMonsters.Cache;
 import com.glisterbyte.SingingMonsters.Player;
 import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsPlayer;
 import com.smartfoxserver.v2.entities.data.ISFSObject;
@@ -14,6 +17,14 @@ import java.util.concurrent.ExecutionException;
 public class Client {
 
     private SfsClient sfsClient = null;
+
+    private Client() { }
+
+    public static Client newClient() {
+        LocalizedResources.loadAllLanguages();
+        Cache.preload();
+        return new Client();
+    }
 
     public void connect(Credentials credentials) {
 
@@ -45,7 +56,12 @@ public class Client {
         catch (ExecutionException | InterruptedException ex) {
             throw new InitializationFailed(ex);
         }
+        Cache.update(sfsClient);
 
+    }
+
+    public SfsClient getSfsClient() {
+        return sfsClient;
     }
 
     public Player fetchPlayer() {
@@ -65,6 +81,10 @@ public class Client {
         }
         return Player.buildPlayer(sfsClient, SfsMapper.mapSFSObjectToClass(SfsPlayer.class, data));
 
+    }
+
+    public static void setLanguage(Language language) {
+        LocalizedResources.setDefaultLanguage(language);
     }
 
 }

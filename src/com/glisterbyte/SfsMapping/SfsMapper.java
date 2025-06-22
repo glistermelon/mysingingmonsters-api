@@ -100,16 +100,124 @@ public class SfsMapper {
                     field.set(obj, value.getObject());
                 }
                 else if (List.class.isAssignableFrom(type)) {
+
                     if (!field.isAnnotationPresent(SfsArrayElementType.class)) {
-                        throw new UnmappableType("Unmappable type: '" + type.getName() + "'");
+                        throw new UnmappableType("Can't map unannotated list '" + key + "'");
                     }
                     Class<?> elementType = field.getAnnotation(SfsArrayElementType.class).value();
-                    List<Object> list = new ArrayList<>();
-                    var sfsArray = sfsObject.getSFSArray(key);
-                    for (int i = 0; i < sfsArray.size(); i++) {
-                        list.add(mapSFSObjectToClass(elementType, sfsArray.getSFSObject(i)));
+
+                    SFSDataWrapper array = sfsObject.get(key);
+
+                    if (
+                            // The object can contain either a JSON list or another type of list
+                            field.isAnnotationPresent(SfsJsonArray.class)
+                            && array.getTypeId() == SFSDataType.UTF_STRING
+                    ) {
+                        String jsonStr = sfsObject.getUtfString(key);
+                        ISFSObject jsonObject = SFSObject.newFromJsonData(
+                                "{\"k\":" + jsonStr + "}"
+                        );
+                        sfsObject.put(key, jsonObject.get("k"));
+                        array = sfsObject.get(key);
                     }
+
+                    List<Object> list = new ArrayList<>();
+
+                    if (elementType == Integer.class) {
+                        if (array.getTypeId() == SFSDataType.INT_ARRAY) {
+                            list.addAll(sfsObject.getIntArray(key));
+                        }
+                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
+                            var sfsArray = sfsObject.getSFSArray(key);
+                            for (int i = 0; i < sfsArray.size(); i++) {
+                                list.add(sfsArray.getInt(i));
+                            }
+                        }
+                        else {
+                            throw new UnmappableType("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
+                        }
+                    }
+                    else if (elementType == Long.class) {
+                        if (array.getTypeId() == SFSDataType.LONG_ARRAY) {
+                            list.addAll(sfsObject.getLongArray(key));
+                        }
+                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
+                            var sfsArray = sfsObject.getSFSArray(key);
+                            for (int i = 0; i < sfsArray.size(); i++) {
+                                list.add(sfsArray.getLong(i));
+                            }
+                        }
+                        else {
+                            throw new UnmappableType("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
+                        }
+                    }
+                    else if (elementType == Short.class) {
+                        if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
+                            var sfsArray = sfsObject.getSFSArray(key);
+                            for (int i = 0; i < sfsArray.size(); i++) {
+                                list.add(sfsArray.getShort(i));
+                            }
+                        }
+                        else {
+                            throw new UnmappableType("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
+                        }
+                    }
+                    else if (elementType == Double.class) {
+                        if (array.getTypeId() == SFSDataType.DOUBLE_ARRAY) {
+                            list.addAll(sfsObject.getDoubleArray(key));
+                        }
+                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
+                            var sfsArray = sfsObject.getSFSArray(key);
+                            for (int i = 0; i < sfsArray.size(); i++) {
+                                list.add(sfsArray.getDouble(i));
+                            }
+                        }
+                        else {
+                            throw new UnmappableType("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
+                        }
+                    }
+                    else if (elementType == Boolean.class) {
+                        if (array.getTypeId() == SFSDataType.BOOL_ARRAY) {
+                            list.addAll(sfsObject.getBoolArray(key));
+                        }
+                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
+                            var sfsArray = sfsObject.getSFSArray(key);
+                            for (int i = 0; i < sfsArray.size(); i++) {
+                                list.add(sfsArray.getBool(i));
+                            }
+                        }
+                        else {
+                            throw new UnmappableType("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
+                        }
+                    }
+                    else if (elementType == String.class) {
+                        if (array.getTypeId() == SFSDataType.UTF_STRING_ARRAY) {
+                            list.addAll(sfsObject.getUtfStringArray(key));
+                        }
+                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
+                            var sfsArray = sfsObject.getSFSArray(key);
+                            for (int i = 0; i < sfsArray.size(); i++) {
+                                list.add(sfsArray.getUtfString(i));
+                            }
+                        }
+                        else {
+                            throw new UnmappableType("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
+                        }
+                    }
+                    else {
+                        if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
+                            var sfsArray = sfsObject.getSFSArray(key);
+                            for (int i = 0; i < sfsArray.size(); i++) {
+                                list.add(mapSFSObjectToClass(elementType, sfsArray.getSFSObject(i)));
+                            }
+                        }
+                        else {
+                            throw new UnmappableType("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
+                        }
+                    }
+
                     field.set(obj, list);
+
                 }
                 else if (type.isAnnotationPresent(SfsPropertyArray.class)) {
                     var value = sfsObject.get(key);
@@ -152,7 +260,10 @@ public class SfsMapper {
 
         for (Field field : getFields(obj.getClass())) {
 
-            if (field.isAnnotationPresent(SfsMapperIgnore.class)) continue;
+            if (
+                    field.isAnnotationPresent(SfsMapperIgnore.class)
+                    || field.isAnnotationPresent(SfsObjectField.class)
+            ) continue;
 
             try {
 

@@ -5,7 +5,10 @@ import com.glisterbyte.SfsMapping.SfsMapper;
 import com.glisterbyte.SingingMonsters.SfsModels.Client.SfsExpectResponse;
 import com.glisterbyte.SingingMonsters.SfsModels.Client.SfsRequestModel;
 import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsResponseModel;
+import com.glisterbyte.SingingMonsters.SfsModels.SfsChunked;
 import com.glisterbyte.SingingMonsters.SfsModels.SfsCmd;
+import com.smartfoxserver.v2.entities.data.ISFSArray;
+import com.smartfoxserver.v2.entities.data.SFSArray;
 import com.smartfoxserver.v2.entities.data.SFSObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +36,8 @@ public class SfsClient {
 
     public static class ExtensionResponseWaiter {
 
-        private final Predicate<ExtendedBaseEvent> predicate;
-        private final CompletableFuture<SFSObject> future;
+        protected final Predicate<ExtendedBaseEvent> predicate;
+        protected final CompletableFuture<SFSObject> future;
 
         public ExtensionResponseWaiter(Predicate<ExtendedBaseEvent> predicate) {
             this.predicate = predicate;
@@ -49,8 +52,46 @@ public class SfsClient {
             return predicate.test(event);
         }
 
-        public void complete(SFSObject result) {
+        public boolean complete(SFSObject result) {
             future.complete(result);
+            return true;
+        }
+
+    }
+
+    public static class ChunkedExtensionResponseWaiter extends ExtensionResponseWaiter {
+
+        private final List<SFSObject> results = new ArrayList<>();
+        private Integer numChunks = null;
+        private final String chunkedKey;
+
+        public ChunkedExtensionResponseWaiter(Predicate<ExtendedBaseEvent> predicate, String chunkedKey) {
+            super(predicate);
+            this.chunkedKey = chunkedKey;
+        }
+
+        @Override
+        public boolean complete(SFSObject result) {
+            results.add(result);
+            if (numChunks == null && result.containsKey("numChunks")) {
+                numChunks = result.getInt("numChunks");
+            }
+            if (numChunks == null || results.size() == numChunks) {
+                SFSArray resultArray = new SFSArray();
+                for (SFSObject storedResult : results) {
+                    ISFSArray array = storedResult.getSFSArray(chunkedKey);
+                    for (int i = 0; i < array.size(); i++) {
+                        resultArray.add(array.get(i));
+                    }
+                }
+                SFSObject resultObj = new SFSObject();
+                resultObj.putSFSArray(chunkedKey, resultArray);
+                future.complete(resultObj);
+                return true;
+            }
+            else {
+                return false;
+            }
         }
 
     }
@@ -136,6 +177,7 @@ public class SfsClient {
         var event = new ExtendedBaseEvent(baseEvent);
 
         ExtensionResponseWaiter match = null;
+        boolean matched = false;
 
         synchronized (extensionResponseLock) {
 
@@ -147,7 +189,10 @@ public class SfsClient {
 
             for (var waiter : extensionResponseWaiters) {
                 if (waiter.matches(event)) {
-                    match = waiter;
+                    matched = true;
+                    if (waiter.complete(event.getParams())) {
+                        match = waiter;
+                    }
                     break;
                 }
             }
@@ -155,8 +200,7 @@ public class SfsClient {
 
         }
 
-        if (match != null) match.complete(event.getParams());
-        else logger.warn("Extension response did not match any waiters: {}", event);
+        if (!matched) logger.warn("Extension response did not match any waiters: {}", event);
 
     }
 
@@ -187,6 +231,14 @@ public class SfsClient {
         }
     }
 
+    public CompletableFuture<SFSObject> requestResponse(String cmd, SFSObject params) {
+        return requestResponse(cmd, params, ev -> ev.getCmd().equals(cmd));
+    }
+
+    public CompletableFuture<SFSObject> requestResponse(String cmd) {
+        return requestResponse(cmd, new SFSObject());
+    }
+
     public CompletableFuture<List<SfsResponseModel>> requestResponses(SfsRequestModel request) {
 
         synchronized (extensionResponseLock) {
@@ -200,10 +252,21 @@ public class SfsClient {
             final List<CompletableFuture<SfsResponseModel>> futures = new ArrayList<>();
             for (SfsExpectResponse expectedResponse
                     : request.getClass().getAnnotationsByType(SfsExpectResponse.class)) {
-                var waiter = waitForEventWithWaiter(ev -> {
-                    String cmd = expectedResponse.value().getAnnotation(SfsCmd.class).value();
-                    return ev.getCmd().equals(cmd);
-                });
+                ExtensionResponseWaiter waiter;
+                if (!expectedResponse.value().isAnnotationPresent(SfsChunked.class)) {
+                    waiter = waitForEventWithWaiter(ev -> {
+                        String cmd = expectedResponse.value().getAnnotation(SfsCmd.class).value();
+                        return ev.getCmd().equals(cmd);
+                    });
+                }
+                else {
+                    waiter = waitForChunkedEventWithWaiter(
+                            expectedResponse.value().getAnnotation(SfsChunked.class).value(),
+                            ev -> {
+                        String cmd = expectedResponse.value().getAnnotation(SfsCmd.class).value();
+                        return ev.getCmd().equals(cmd);
+                    });
+                }
                 waiters.add(waiter);
                 final int waiterIndex = waiters.indexOf(waiter);
                 futures.add(waiter.getFuture().thenApply(params -> {
@@ -230,6 +293,17 @@ public class SfsClient {
     ) {
         synchronized (extensionResponseLock) {
             var responseWaiter = new ExtensionResponseWaiter(match);
+            extensionResponseWaiters.add(responseWaiter);
+            return responseWaiter;
+        }
+    }
+
+    private ExtensionResponseWaiter waitForChunkedEventWithWaiter(
+            String chunkedKey,
+            Predicate<ExtendedBaseEvent> match
+    ) {
+        synchronized (extensionResponseLock) {
+            var responseWaiter = new ChunkedExtensionResponseWaiter(match, chunkedKey);
             extensionResponseWaiters.add(responseWaiter);
             return responseWaiter;
         }

@@ -11,3 +11,14 @@ apk/
 ### Documentation ###
 sfs-api-docs/build
 sfs-api-docs/source/commands/startup
+
+credentials.txt
+data.txt
+data.json
+data/
+cache/
+misc/java-info-gen/input/
+misc/java-info-gen/output/
+misc/text-asset-decoder/output/
+resources/
+msm_cache/

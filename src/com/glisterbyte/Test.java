@@ -1,24 +1,43 @@
 package com.glisterbyte;
 
-import com.glisterbyte.Network.Client;
-import com.glisterbyte.Network.Credentials;
-import com.glisterbyte.SingingMonsters.IslandType;
-import com.glisterbyte.SingingMonsters.Player;
-import com.glisterbyte.SingingMonsters.SfsModels.Client.BuyIslandFailed;
-import com.glisterbyte.SingingMonsters.Structures.Mine;
+import com.glisterbyte.Localization.Language;
+import com.glisterbyte.Localization.LocalizedResources;
+import com.glisterbyte.SingingMonsters.Cache;
+import com.glisterbyte.SingingMonsters.Element;
+import com.glisterbyte.SingingMonsters.MonsterType;
+import com.glisterbyte.SingingMonsters.StructureType;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.Duration;
 
 public class Test {
     public static void main(String[] args) throws IOException {
-        String credentialsString = Files.readString(Paths.get("res/credentials.txt"));
-        String[] split = credentialsString.split("\\r\\n");
-        Credentials credentials = new Credentials(split[0], split[1]);
-        Client client = new Client();
-        client.connect(credentials);
-        Player player = client.fetchPlayer();
+
+        Cache.preload();
+        LocalizedResources.loadAllLanguages();
+
+        MonsterType monsterType = MonsterType.rareShrubb();
+        System.out.println(monsterType.getName());
+        System.out.println(monsterType.getName(Language.JAPANESE));
+        for (Element element : monsterType.getElements()) {
+            System.out.println(element.getName());
+        }
+        System.out.println(monsterType.getDescription());
+        System.out.println(monsterType.getDescription(Language.SPANISH));
+
+        StructureType structureType = StructureType.amberedThing();
+        System.out.println(structureType.getStructureCategory());
+        System.out.println(structureType.getName());
+        System.out.println(structureType.getDescription());
+
+        structureType = StructureType.nexusNucleus();
+        System.out.println(structureType.getStructureCategory());
+        System.out.println(structureType.getName());
+        System.out.println(structureType.getDescription(Language.FRENCH));
+
+        structureType = StructureType.reflectingPool();
+        System.out.println(structureType.getStructureCategory());
+        System.out.println(structureType.getName());
+        System.out.println(structureType.getDescription(Language.PORTUGUESE));
+
     }
 }

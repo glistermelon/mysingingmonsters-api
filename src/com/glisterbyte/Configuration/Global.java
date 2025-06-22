@@ -1,5 +1,8 @@
 package com.glisterbyte.Configuration;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class Global {
 
     // TODO: I hate this and I want it gone.

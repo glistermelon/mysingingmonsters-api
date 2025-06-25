@@ -1,5 +1,11 @@
 package com.glisterbyte.Configuration;
 
+import com.glisterbyte.Localization.LocalizedResources;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -26,4 +32,25 @@ public class Global {
     // It can be extracted from the APK itself
     // or by intercepting/sniffing HTTPS authentication traffic.
     public static String ACCESS_KEY = "70ba5d5d-d903-4587-93d6-655c4814844f";
+
+    public static String getResourceAsString(String resource) {
+
+        InputStream input = LocalizedResources.class.getClassLoader().getResourceAsStream(resource);
+        assert input != null;
+
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        try {
+            for (int length; (length = input.read(buffer)) != -1; ) {
+                result.write(buffer, 0, length);
+            }
+        }
+        catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        return result.toString(StandardCharsets.UTF_8);
+
+    }
+
 }

@@ -9,6 +9,7 @@ public class SfsMonster extends SfsServerModel {
     public long island;
     public long userMonsterId;
 
+    public String name;
     public int posX;
     public int posY;
     public int flip;

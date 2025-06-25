@@ -1,7 +1,5 @@
 package com.glisterbyte.SingingMonsters;
 
-import com.glisterbyte.Network.SfsClient;
-import com.glisterbyte.SingingMonsters.Binds.ClientBound;
 import com.glisterbyte.SingingMonsters.Binds.IslandBound;
 import com.glisterbyte.SingingMonsters.SfsModels.Server.SfsMonster;
 
@@ -11,6 +9,9 @@ public class Monster extends IslandBound {
 
     private final SfsMonster initialSfsModel;
 
+    private final IslandSpecificMonsterSpecies species;
+
+    private String name;
     private Position position;
     private boolean flip;
     private boolean muted;
@@ -25,6 +26,8 @@ public class Monster extends IslandBound {
     private Monster(Island island, SfsMonster sfsMonster) {
         super(island);
         initialSfsModel = sfsMonster;
+        species = Cache.getSpecificMonsterSpeciesBySpeciesId(sfsMonster.monster);
+        name = sfsMonster.name;
         position = new Position(sfsMonster.posX, sfsMonster.posY);
         flip = sfsMonster.flip == 1;
         muted = sfsMonster.muted == 1;
@@ -40,6 +43,18 @@ public class Monster extends IslandBound {
 
     public SfsMonster getInitialSfsModel() {
         return initialSfsModel;
+    }
+
+    public IslandSpecificMonsterSpecies getSpecificSpecies() {
+        return species;
+    }
+
+    public MonsterSpecies getGenericSpecies() {
+        return species.getGenericSpecies();
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Position getPosition() {

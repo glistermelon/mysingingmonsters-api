@@ -123,6 +123,47 @@ public enum IslandType {
         };
     }
 
+    public static IslandType fromString(String str) {
+        return switch (str) {
+            case "plant" -> PLANT_ISLAND;
+            case "cold" -> COLD_ISLAND;
+            case "air" -> AIR_ISLAND;
+            case "water" -> WATER_ISLAND;
+            case "earth" -> EARTH_ISLAND;
+            case "gold" -> GOLD_ISLAND;
+            case "ethereal" -> ETHEREAL_ISLAND;
+            case "shugabush" -> SHUGABUSH_ISLAND;
+            case "tribal" -> TRIBAL_ISLAND;
+            case "wublin" -> WUBLIN_ISLAND;
+            case "composer" -> COMPOSER_ISLAND;
+            case "celestial" -> CELESTIAL_ISLAND;
+            case "fire_haven" -> FIRE_HAVEN;
+            case "fire_oasis" -> FIRE_OASIS;
+            case "psychic" -> PSYCHIC_ISLAND;
+            case "faerie" -> FAERIE_ISLAND;
+            case "bone" -> BONE_ISLAND;
+            case "light" -> LIGHT_ISLAND;
+            case "magical_sanctum" -> MAGICAL_SANCTUM;
+            case "colossingum" -> THE_COLOSSINGUM;
+            case "seasonal" -> SEASONAL_SHANTY;
+            case "amber" -> AMBER_ISLAND;
+            case "mythical" -> MYTHICAL_ISLAND;
+            case "ethereal_workshop" -> ETHEREAL_WORKSHOP;
+            case "magical_nexus" -> MAGICAL_NEXUS;
+            case "plasma_islet" -> PLASMA_ISLET;
+            case "mirror_plant" -> MIRROR_PLANT_ISLAND;
+            case "mirror_cold" -> MIRROR_COLD_ISLAND;
+            case "mirror_air" -> MIRROR_AIR_ISLAND;
+            case "mirror_water" -> MIRROR_WATER_ISLAND;
+            case "mirror_earth" -> MIRROR_EARTH_ISLAND;
+            case "mirror_psychic" -> MIRROR_PSYCHIC_ISLAND;
+            case "mirror_faerie" -> MIRROR_FAERIE_ISLAND;
+            case "mirror_bone" -> MIRROR_BONE_ISLAND;
+            case "mirror_light" -> MIRROR_LIGHT_ISLAND;
+            default -> throw new IllegalArgumentException("Unrecognized island string: " + str);
+        };
+    }
+
     public static List<IslandType> allIslandTypes() {
         return Arrays.asList(
             PLANT_ISLAND,

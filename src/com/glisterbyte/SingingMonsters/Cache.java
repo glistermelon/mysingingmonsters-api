@@ -1,5 +1,9 @@
 package com.glisterbyte.SingingMonsters;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.glisterbyte.Configuration.Global;
 import com.glisterbyte.Network.SfsClient;
 import com.glisterbyte.SfsMapping.SfsMapper;
 import com.glisterbyte.SingingMonsters.SfsModels.Client.DbGenesRequest;
@@ -14,7 +18,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Cache {
 
@@ -22,7 +28,7 @@ public class Cache {
 
     private static boolean initialized = false;
 
-    private static List<MonsterType> monsterTypes = null;
+    private static List<IslandSpecificMonsterSpecies> islandSpecificMonsterSpecies = null;
     private static final String MONSTERS_FILE_NAME = "monsters";
 
     private static List<Element> elements = null;
@@ -30,6 +36,8 @@ public class Cache {
 
     private static List<StructureType> structureTypes = null;
     private static final String STRUCTURES_FILE_NAME = "structures";
+
+    private static List<MonsterSpecies> genericMonsterSpecies = null;
 
     private static void ensureCacheDirExists() {
         try {
@@ -91,6 +99,27 @@ public class Cache {
         ISFSObject sfsObject = SFSObject.newFromJsonData(json);
         return SfsMapper.mapSFSObjectToClass(_class, sfsObject);
     }
+    
+    private static void loadGenericMonsterSpecies() {
+        try {
+            genericMonsterSpecies = new ArrayList<>();
+            JsonNode json = new ObjectMapper().readTree(Global.getResourceAsString("monster_types.json"));
+            for (var genericEntry : json.properties()) {
+                Map<String, IslandSpecificMonsterSpecies> map = new HashMap<>();
+                for (var specificEntry : genericEntry.getValue().properties()) {
+                    map.put(
+                            specificEntry.getKey(),
+                            IslandSpecificMonsterSpecies.fromId(specificEntry.getValue().asInt())
+                    );
+                }
+                MonsterSpecies species = new MonsterSpecies(genericEntry.getKey(), map);
+                genericMonsterSpecies.add(species);
+            }
+        } catch (JsonProcessingException ex) {
+            genericMonsterSpecies = null;
+            throw new RuntimeException("Misconfigured resources: cannot get monster types", ex);
+        }
+    }
 
     private static void preloadElements() {
         DbGenesResponse dbGenes = (DbGenesResponse)load(DbGenesResponse.class, ELEMENTS_FILE_NAME);
@@ -102,13 +131,14 @@ public class Cache {
         }
     }
 
-    private static void preloadMonsterTypes() {
+    private static void preloadSpecificMonsterSpecies() {
         DbMonstersResponse dbMonsters = (DbMonstersResponse)load(DbMonstersResponse.class, MONSTERS_FILE_NAME);
         if (dbMonsters != null) {
-            monsterTypes = new ArrayList<>();
+            islandSpecificMonsterSpecies = new ArrayList<>();
             for (SfsMonsterInfo sfsInfo : dbMonsters.monstersData) {
-                monsterTypes.add(new MonsterType(sfsInfo));
+                islandSpecificMonsterSpecies.add(new IslandSpecificMonsterSpecies(sfsInfo));
             }
+            loadGenericMonsterSpecies();
         }
     }
 
@@ -131,13 +161,13 @@ public class Cache {
 
         if (elements != null) {
             try {
-                preloadMonsterTypes();
+                preloadSpecificMonsterSpecies();
             }
             catch (ElementNotFoundException ex) {
                 erase(ELEMENTS_FILE_NAME);
                 erase(MONSTERS_FILE_NAME);
                 elements = null;
-                monsterTypes = null;
+                islandSpecificMonsterSpecies = null;
             }
         }
 
@@ -162,14 +192,15 @@ public class Cache {
             save(dbGenes);
         }
 
-        if (monsterTypes == null) {
+        if (islandSpecificMonsterSpecies == null) {
             DbMonstersResponse dbMonsters = (DbMonstersResponse)
                     sfsClient.requestResponses(new DbMonstersRequest()).join().getFirst();
-            monsterTypes = new ArrayList<>();
+            islandSpecificMonsterSpecies = new ArrayList<>();
             for (SfsMonsterInfo sfsInfo : dbMonsters.monstersData) {
-                monsterTypes.add(new MonsterType(sfsInfo));
+                islandSpecificMonsterSpecies.add(new IslandSpecificMonsterSpecies(sfsInfo));
             }
             save(dbMonsters);
+            loadGenericMonsterSpecies();
         }
 
         if (structureTypes == null) {
@@ -198,8 +229,8 @@ public class Cache {
         return new ArrayList<>(elements);
     }
 
-    public static List<MonsterType> getAllMonsterTypes() {
-        return new ArrayList<>(monsterTypes);
+    public static List<MonsterSpecies> getAllMonsterSpecies() {
+        return new ArrayList<>(genericMonsterSpecies);
     }
 
     public static List<StructureType> getAllStructureTypes() {
@@ -216,11 +247,31 @@ public class Cache {
         return null;
     }
 
-    public static MonsterType getMonsterTypeByTypeId(int typeId) {
-        if (monsterTypes == null) return null;
-        for (MonsterType monsterType : monsterTypes) {
-            if (monsterType.getTypeId() == typeId) {
-                return monsterType;
+    public static IslandSpecificMonsterSpecies getSpecificMonsterSpeciesBySpeciesId(int speciesId) {
+        if (islandSpecificMonsterSpecies == null) return null;
+        for (IslandSpecificMonsterSpecies islandSpecificMonsterSpecies : islandSpecificMonsterSpecies) {
+            if (islandSpecificMonsterSpecies.getSpeciesId() == speciesId) {
+                return islandSpecificMonsterSpecies;
+            }
+        }
+        return null;
+    }
+
+    public static MonsterSpecies getGenericMonsterSpeciesBySpeciesId(int speciesId) {
+        if (genericMonsterSpecies == null) return null;
+        for (MonsterSpecies species : genericMonsterSpecies) {
+            if (species.matchesSpeciesId(speciesId)) {
+                return species;
+            }
+        }
+        return null;
+    }
+
+    public static MonsterSpecies getGenericMonsterSpeciesByResourceKey(String resourceKey) {
+        if (genericMonsterSpecies == null) return null;
+        for (MonsterSpecies species : genericMonsterSpecies) {
+            if (species._getResourceKey().equals(resourceKey)) {
+                return species;
             }
         }
         return null;
@@ -237,10 +288,10 @@ public class Cache {
     }
 
     public static Object getEntityByEntityId(int entityId) {
-        if (monsterTypes != null) {
-            for (MonsterType monsterType : monsterTypes) {
-                if (monsterType.getEntityId() == entityId) {
-                    return monsterType;
+        if (islandSpecificMonsterSpecies != null) {
+            for (IslandSpecificMonsterSpecies islandSpecificMonsterSpecies : Cache.islandSpecificMonsterSpecies) {
+                if (islandSpecificMonsterSpecies.getEntityId() == entityId) {
+                    return islandSpecificMonsterSpecies;
                 }
             }
         }

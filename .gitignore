@@ -16,6 +16,7 @@ credentials.txt
 data.txt
 data.json
 data/
+!src/**
 cache/
 misc/java-info-gen/input/
 misc/java-info-gen/output/

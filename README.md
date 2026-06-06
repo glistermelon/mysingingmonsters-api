@@ -1,4 +1,4 @@
-## docs and examples arent done yet
+# This isn't done yet but it's almost done
 
 # My Singing Monsters Client for Java
 

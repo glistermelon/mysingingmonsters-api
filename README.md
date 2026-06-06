@@ -1,3 +1,5 @@
+## docs and examples arent done yet
+
 # My Singing Monsters Client for Java
 
 A *My Singing Monsters* client written in Java. See the documentation for how much 'readable' information (i.e., info available via getter methods) is available for different types. Currently supported non-read-only features are:

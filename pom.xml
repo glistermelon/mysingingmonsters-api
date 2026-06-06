@@ -1,0 +1,36 @@
+<project>
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.glisterbyte</groupId>
+    <artifactId>mysingingmonsters</artifactId>
+    <version>0.1.0</version>
+    <packaging>pom</packaging>
+
+    <developers>
+        <developer>
+            <name>glistermelon</name>
+        </developer>
+    </developers>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+    </properties>
+
+    <modules>
+        <module>mysingingmonsters-client</module>
+        <module>mysingingmonsters-client-tools</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.github.cdimascio</groupId>
+                <artifactId>java-dotenv</artifactId>
+                <version>5.2.2</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>

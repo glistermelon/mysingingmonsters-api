@@ -56,6 +56,8 @@ Analysis of `game::Player::initWithSFSObject` shows that there may be more undoc
 | `user` | `long` | Probably the same as `user_id`. | Has always matched `user_id`. |
 | `user_id` | `int` | The user's ID. In my case, very close to but not the same as the BigBlueBubble ID. Likely not private information because other players' user IDs are used to view their islands (like friends). |
 | `xp` | `int` | The amount of XP the user has. TODO: is this cumulative? |
+| `clubbox_tokens` | `long` | How many Clubbox tokens the user has. |
+| `daily_bonus_type` | `utf_string` | What kind of currency the user's daily reward is. |
 
 ### Undetermined Key-Values
 
@@ -71,13 +73,13 @@ Analysis of `game::Player::initWithSFSObject` shows that there may be more undoc
 | `is_admin` | `int` | | Why is this an int? |
 | `egg_wildcards_actual`| `long` | | Presumably related to egg scratch cards, but not sure why this is a long instead of an int. |
 | `next_relic_reset` | `long` | | Probably related to `daily_relic_purchase_count`. |
-| `client_tutorial_setup` | `utf_string` | `breedingAddOn` |
+| `client_tutorial_setup` | `utf_string` | `"breedingAddOn"`, `"breedingAddOnBridged"` |
 | `pvpSeason0` | `sfs_object` | | Contains `schedule_started_on`, a `long` which looks like another timestamp. Also contains `campaign_id`, an `int`.
 | `twitter_invite_reward` | `int` |
 | `egg_wildcards` | `long` | | How does this differ from `egg_wildcards_actual`? |
 | `pvpSeason1` | `sfs_object` | | Same as `pvpSeason0`, structure-wise. |
 | `has_promo` | `bool` |
-| `costumes` | `sfs_object` |
+| `costumes` | `sfs_object` | Has `sfs_array` `items` and `int_array` `unlocked` |
 | `last_fb_post_reward` | `long` | | Looks like a timestamp. |
 | `currencyScratchTime` | `long` | | Looks like a timestamp. |
 | `speed_up_credit` | `long` |
@@ -108,3 +110,85 @@ Analysis of `game::Player::initWithSFSObject` shows that there may be more undoc
 | `battle` | `sfs_object` |
 | `fb_invite_reward` | `int` |
 | `perma_campaigns_viewed` | `int_array` |
+| `guided_progress_setup` | `utf_string` | `"exclaim"` |
+| `currency_prompt_setup` | `utf_string` | empty |
+| `profile` | `sfs_object`, See 'Profile' below |
+| `clubboxes` | `sfs_array`, see below |
+| `current_encore_state` | see below |
+
+
+### Example Profile Data
+```
+(int) followback_permission: 2
+(utf_string) data: 
+    "bg_id":3,"moniker_id":0,"migration_ran":3,"fav_mon_1_id":3,"version":1,"fav_island_id":1,"total_torches_lit":0,"card_id":1,"avatar_id":2,"fav_mon_2_id":5,"fav_mon_3_id":4,"phrase_id":591,"frame_id":9
+
+(int) level: 1
+(bool) discoverable: true
+(utf_string) friend_code: 2vxcc84gzp8cml
+(int) follow_permission: 1
+```
+
+### Example `mailbox` data
+```
+(sfs_object) 
+(utf_string) short_title: MAILBOX_CSRTITLEGEN
+(sfs_object) attachment: 
+    (utf_string) icon: button_goal_survey
+    (utf_string) type: link
+    (utf_string) title: WELCOME_BACK_SURVEY_LABEL
+    (utf_string) url: WELCOME_BACK_SURVEY_URL
+    (utf_string) icon_sheet: xml_resources/hud03.xml
+    
+
+(utf_string) icon: news_handlers
+(long) user_mail_id: 1171150000
+(long) message_id: 901000
+(utf_string) from: MAILBOX_MONSTERHANDLERS
+(long) received_on: 1778108366000
+(int) expiry: 2592000
+(utf_string) title: WELCOME_BACK_TEXT
+(utf_string) message: WELCOME_BACK_MESSAGE
+(bool) urgent: false
+```
+
+### Example `clubboxes` data
+```
+(sfs_array) clubboxes: 
+        (sfs_object) 
+        (int) act: -1
+        (sfs_object) clubbox_data: 
+            (long) island: 0
+            (int) top_hype: 0
+            (int) hype: 0
+            (long) started_at: 0
+            (int) top_hype_at_start: 0
+```
+
+### Example `current_encore_state` data
+```
+(sfs_object) current_encore_state: 
+    (long) event_id: 1
+    (double) total_points: 0.0
+```
+
+
+### Example `timed_events` data
+```
+(sfs_array) timed_events: 
+        (sfs_object) 
+        (long) end_date: 1779317966000
+        (int) event_id: 20
+        (sfs_array) data: 
+                (sfs_object) 
+                (double) coin_production_mod: 1.15
+                (double) nursery_speed_mod: 0.9
+                
+            
+        
+        (long) user_id: 1079714104
+        (int) max: 0
+        (int) count: 0
+        (long) id: 317986332
+        (long) start_date: 1778108366000
+```

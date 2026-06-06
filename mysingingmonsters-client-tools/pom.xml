@@ -1,0 +1,27 @@
+<project>
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.glisterbyte</groupId>
+        <artifactId>mysingingmonsters</artifactId>
+        <version>0.1.0</version>
+    </parent>
+
+    <artifactId>mysingingmonsters-client-tools</artifactId>
+
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.glisterbyte</groupId>
+            <artifactId>mysingingmonsters-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>java-dotenv</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

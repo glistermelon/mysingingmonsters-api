@@ -23,3 +23,9 @@ misc/java-info-gen/output/
 misc/text-asset-decoder/output/
 resources/
 msm_cache/
+.vscode/
+logs/
+.env
+scripts/text-assets/
+scripts/decoded-text/
+target/

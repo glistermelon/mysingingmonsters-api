@@ -63,6 +63,8 @@ The `Catalog` primarily provides methods to get all of the items for a respectiv
 
 These have named methods for recognized items that you would probably be looking for, like the air element or the cupcakes recipe.
 
+You can get `Catalog` or any of the specialized catalog instances using getter methods on `Client`, e.g., `client.getCatalog()`, `client.getMonsterCatalog()`, etc..
+
 #### Cache
 
 If you've already successfully connected the client once, the catalog will be cached. You can load a `Catalog` from cache without connecting at all like this:

@@ -35,6 +35,11 @@ I personally have not used the client on my own account.
 
 #### **Do not share any logs with Apache HttpComponents Client debug-level logging enabled anywhere! They contain your username and password in plain text!**
 
+## Documentation
+
+* [Java Client Documentation](https://glistermelon.github.io/mysingingmonsters-client/)
+* [Server API Documentation](https://msm-api-docs.glisterbyte.com/)
+
 ## Installation
 
 ## Usage

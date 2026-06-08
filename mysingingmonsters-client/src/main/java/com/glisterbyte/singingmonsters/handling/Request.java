@@ -69,7 +69,7 @@ public class Request {
         return future;
     }
 
-    public <RequestData, EventT extends SfsCorrelatedEventModel, HandledT>
+    public <RequestData, EventT extends SfsEventModel & SfsCorrelatedEventModel, HandledT>
         CompletableFuture<HandledEvent<RequestData, EventT, HandledT>> expectResponse(
             CorrelatedEventHandler<RequestData, EventT, HandledT> handler, long correlationId
         )
@@ -148,7 +148,7 @@ public class Request {
         return future.getNow(null).getResult();
     }
 
-    public static <RequestData, EventT extends SfsCorrelatedEventModel, HandledT> HandledT simpleRequest(
+    public static <RequestData, EventT extends SfsEventModel & SfsCorrelatedEventModel, HandledT> HandledT simpleRequest(
             CorrelatedEventHandler<RequestData, EventT, HandledT> handler, SfsRequestModel model,
             @Nullable Island island, long correlationId
     ) throws InterruptedException, ClientException {

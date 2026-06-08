@@ -2,12 +2,12 @@ package com.glisterbyte.singingmonsters.sfsmodels;
 
 import com.glisterbyte.singingmonsters.sfsmapping.SfsCmd;
 import com.glisterbyte.singingmonsters.sfsmapping.SfsOptional;
-import com.glisterbyte.singingmonsters.sfsmodels.data.SfsUpdate;
+import com.glisterbyte.singingmonsters.sfsmodels.data.SfsGenericUpdate;
 
 public abstract class SfsEventModel extends SfsModel {
 
     @SfsOptional
-    public SfsUpdate properties;
+    public SfsGenericUpdate properties;
 
     public String getCommand() {
         SfsCmd sfsCmd = this.getClass().getAnnotation(SfsCmd.class);

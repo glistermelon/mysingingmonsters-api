@@ -56,13 +56,13 @@ public abstract class AbstractIsland implements ReadableIsland, HasClient {
         if (!first) {
             Validate.isTrue(
                     userIslandId == sfsIsland.user_island_id,
-                    "User island id refresh mismatch; expected {}, got {}",
+                    "User island id refresh mismatch; expected %s, got %s",
                     userIslandId, sfsIsland.user_island_id
             );
             var islandType = IslandType.fromId(sfsIsland.island);
             Validate.isTrue(
                     this.islandType == islandType,
-                    "Island type refresh mismatch; expected {}, got {}",
+                    "Island type refresh mismatch; expected %s, got %s",
                     this.islandType, islandType
             );
         }

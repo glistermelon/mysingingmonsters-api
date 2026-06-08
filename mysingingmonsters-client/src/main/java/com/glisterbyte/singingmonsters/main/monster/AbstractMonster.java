@@ -50,7 +50,7 @@ public abstract class AbstractMonster implements ReadableMonster, HasClient {
 
             Validate.isTrue(
                     userMonsterId == sfsMonster.user_monster_id,
-                    "User monster id refresh mismatch; expected {}, got {}",
+                    "User monster id refresh mismatch; expected %s, got %s",
                     userMonsterId, sfsMonster.user_monster_id
             );
 
@@ -58,7 +58,7 @@ public abstract class AbstractMonster implements ReadableMonster, HasClient {
             MonsterSpecies species = getCatalog().getMonsterSpecies(sfsMonster.monster);
             Validate.isTrue(
                     this.species.equals(species),
-                    "Monster species refresh mismatch; expected {}, got {}",
+                    "Monster species refresh mismatch; expected %s, got %s",
                     this.species, species
             );
 

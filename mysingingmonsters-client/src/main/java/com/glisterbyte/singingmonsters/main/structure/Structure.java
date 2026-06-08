@@ -21,7 +21,7 @@ public class Structure extends AbstractStructure implements ControllableStructur
             synchronized (Structure.this) {
                 Validate.isTrue(
                         Structure.this.userStructureId == userStructureId,
-                        "Expected event user structure id {} to match actual user structure id {}",
+                        "Expected event user structure id %s to match actual user structure id %s",
                         userStructureId, Structure.this.userStructureId
                 );
             }

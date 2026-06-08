@@ -1,6 +1,5 @@
 package com.glisterbyte.singingmonsters.sfsmodels;
 
-import com.glisterbyte.singingmonsters.sfsmapping.exceptions.MissingCommandException;
 import com.glisterbyte.singingmonsters.sfsmapping.SfsCmd;
 import com.glisterbyte.singingmonsters.sfsmapping.SfsObjectField;
 import com.smartfoxserver.v2.entities.data.SFSObject;

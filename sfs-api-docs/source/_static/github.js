@@ -1,12 +1,14 @@
+const githubRepo = "glistermelon/mysingingmonsters-client";
+
 function buildGithubElement() {
     let a = document.createElement('a');
     a.style = "max-height: 20px; display: inline-block; position: relative;";
-    a.href = 'https://github.com/glistermelon/mysingingmonsters-api';
+    a.href = 'https://github.com/' + githubRepo;
     let img = document.createElement('img');
     img.src = '/_static/github.svg';
     img.style = 'max-height: inherit; position: relative; margin-right: 8px';
     let span = document.createElement('span')
-    span.textContent = 'glistermelon/mysingingmonsters-api';
+    span.textContent = githubRepo;
     a.appendChild(img);
     a.appendChild(span);
     return a;

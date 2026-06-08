@@ -28,7 +28,7 @@ public final class GlobalConfig {
     public static String getResourceAsString(String resource) {
 
         InputStream input = GlobalConfig.class.getResourceAsStream(resource);
-        Validate.notNull(input, "Input stream for resource {} was expected to be non-null", resource);
+        Validate.notNull(input, "Input stream for resource %s was expected to be non-null", resource);
 
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];

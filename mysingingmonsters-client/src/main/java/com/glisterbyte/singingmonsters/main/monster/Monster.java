@@ -28,7 +28,7 @@ public class Monster extends AbstractMonster implements ControllableMonster {
             synchronized (Monster.this) {
                 Validate.isTrue(
                         Monster.this.userMonsterId == userMonsterId,
-                        "Expected event user monster id {} to match actual user monster id {}",
+                        "Expected event user monster id %s to match actual user monster id %s",
                         userMonsterId, Monster.this.userMonsterId
                 );
             }

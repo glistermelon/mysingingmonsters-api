@@ -39,7 +39,7 @@ public class Bakery extends Structure implements ReadableBakery {
                 Validate.isTrue(bakeryState != null, "Expected non-idle bakery for finish baking event");
                 Validate.isTrue(
                         event.user_baking_id == bakeryState.bakingId(),
-                        "Expected finish event user baking id {} to match actual user baking id {}",
+                        "Expected finish event user baking id %s to match actual user baking id %s",
                         event.user_baking_id, bakeryState.bakingId()
                 );
                 bakeryState = null;

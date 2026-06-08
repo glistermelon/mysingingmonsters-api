@@ -6,6 +6,9 @@ import com.glisterbyte.singingmonsters.sfsmodels.SfsCorrelatedResultResponse;
 
 import java.util.Optional;
 
+/**
+ * @additionalResponse On success, <@UpdateMonsterEvent> is also sent.
+ */
 @SfsCmd("gs_box_add_egg")
 public class BoxEggResponse extends SfsCorrelatedResultResponse {
 

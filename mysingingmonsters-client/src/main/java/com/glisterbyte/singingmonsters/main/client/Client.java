@@ -17,14 +17,12 @@ import com.glisterbyte.singingmonsters.networking.models.NewGuestAccountResponse
 import com.glisterbyte.singingmonsters.sfsmodels.data.SfsFriend;
 import com.glisterbyte.singingmonsters.sfsmodels.data.SfsFriendRequest;
 import com.glisterbyte.singingmonsters.sfsmodels.data.SfsPlayer;
-import com.glisterbyte.singingmonsters.sfsmodels.data.SfsUpdate;
+import com.glisterbyte.singingmonsters.sfsmodels.data.SfsGenericUpdate;
 import com.glisterbyte.singingmonsters.sfsmodels.events.*;
 import com.glisterbyte.singingmonsters.sfsmodels.requests.ChangeIslandRequest;
 import com.smartfoxserver.v2.entities.data.SFSObject;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -91,7 +89,7 @@ public class Client {
                 long userIslandId = island.getUserIslandId();
                 Validate.isTrue(
                         !islands.containsKey(userIslandId),
-                        "Client already has an island with user island id {}", userIslandId
+                        "Client already has an island with user island id %s", userIslandId
                 );
                 islands.put(userIslandId, island);
                 return island;
@@ -318,7 +316,7 @@ public class Client {
         return catalog.getBakingCatalog();
     }
 
-    public synchronized void update(SfsUpdate update) {
+    public synchronized void update(SfsGenericUpdate update) {
         coins = update.coins_actual;
         diamonds = update.diamonds_actual;
         food = update.food_actual;
@@ -343,7 +341,7 @@ public class Client {
             if (userIslandId == activeIsland.getUserIslandId()) return;
 
             ChangeIslandRequest request = new ChangeIslandRequest();
-            request.userIslandId = userIslandId;
+            request.user_island_id = userIslandId;
             ChangeIslandResponse response = (ChangeIslandResponse)wsClient.request(request, ChangeIslandResponse.class);
             activeIsland = getIsland(response.user_island_id);
         }

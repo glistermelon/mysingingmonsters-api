@@ -41,7 +41,7 @@ public abstract class AbstractStructure implements ReadableStructure, HasClient 
 
             Validate.isTrue(
                     userStructureId == sfsStructure.user_structure_id,
-                    "User structure id refresh mismatch; expected {}, got {}",
+                    "User structure id refresh mismatch; expected %s, got %s",
                     userStructureId, sfsStructure.user_structure_id
             );
 
@@ -51,7 +51,7 @@ public abstract class AbstractStructure implements ReadableStructure, HasClient 
                     = getCatalog().getStructureType(sfsStructure.structure).getStructureCategory();
             Validate.isTrue(
                     category == newCategory,
-                    "Structure category refresh mismatch; expected {}, got {}",
+                    "Structure category refresh mismatch; expected %s, got %s",
                     category, newCategory
             );
 
@@ -75,7 +75,7 @@ public abstract class AbstractStructure implements ReadableStructure, HasClient 
         else timer = null;
 
         Validate.isTrue(
-                structureType != null, "Unrecognized structure type id {}", sfsStructure.structure
+                structureType != null, "Unrecognized structure type id %s", sfsStructure.structure
         );
 
     }

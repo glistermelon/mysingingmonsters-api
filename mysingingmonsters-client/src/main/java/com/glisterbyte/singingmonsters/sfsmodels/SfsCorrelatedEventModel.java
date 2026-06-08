@@ -2,6 +2,6 @@ package com.glisterbyte.singingmonsters.sfsmodels;
 
 import java.util.Optional;
 
-public abstract class SfsCorrelatedEventModel extends SfsEventModel {
-    public abstract Optional<Long> getCorrelationId();
+public interface SfsCorrelatedEventModel {
+    Optional<Long> getCorrelationId();
 }

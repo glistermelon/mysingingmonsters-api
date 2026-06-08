@@ -1,36 +1,21 @@
-# Collect from Mine
+# Collect Mine
 
-## Command String
+Collects from a mine.
+ Fails if the mine isn't ready.
+
+## Command
 
 `gs_collect_from_mine`
 
-## Client-to-Server
+## Request
 
-Indicates to the server that the user would like to attempt to collect from the diamond mine on the [active island](gs_change_island).
+There are no parameters.
 
-### Parameters
+## Response
 
-No parameters are passed.
+Though not listed here, the [standard response parameters](/topics/StandardResponseParameters) are included.
+There are no other parameters.
 
-## Server-to-Client
+### Additional Responses
 
-Always sent in response to a collection request.
-If the collection is successful, `gs_update_structure` is also sent afterwards.
-
-### Success Parameters
-
-| Key | Value Type | Description |
-|-|-|-|
-| `success` | `bool` (`true`) | Whether the collection was successful. |
-
-### Failure Parameters
-
-| Key | Value Type | Description |
-|-|-|-|
-| `success` | `bool` (`false`) | Whether the collection was successful. |
-| `message` | `utf_string` | An error message. |
-
-#### Known Error Messages
-
-* `"Player has no mine"`
-* `"Mine is not ready yet"`
+On success, [Update Structure Event](/events/gs_update_structure) is also sent.

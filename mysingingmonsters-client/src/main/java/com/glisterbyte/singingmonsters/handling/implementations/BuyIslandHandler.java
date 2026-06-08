@@ -36,9 +36,9 @@ public class BuyIslandHandler extends UncorrelatedResultResponseHandler<Void, Bu
         }
 
         BuyIslandRequest request = new BuyIslandRequest();
-        request.islandId = typeId;
-        request.islandName = name;
-        request.starpowerPurchase = false;
+        request.island_id = typeId;
+        request.island_name = name;
+        request.starpower_purchase = false;
 
         return Request.simpleRequest(this, request, null);
 

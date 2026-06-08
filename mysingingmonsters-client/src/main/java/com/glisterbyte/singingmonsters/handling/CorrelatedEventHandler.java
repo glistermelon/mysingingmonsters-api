@@ -1,6 +1,7 @@
 package com.glisterbyte.singingmonsters.handling;
 
 import com.glisterbyte.singingmonsters.sfsmodels.SfsCorrelatedEventModel;
+import com.glisterbyte.singingmonsters.sfsmodels.SfsEventModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public abstract class CorrelatedEventHandler <RequestData, EventT extends SfsCorrelatedEventModel, HandledT>
+public abstract class CorrelatedEventHandler
+        <RequestData, EventT extends SfsEventModel & SfsCorrelatedEventModel, HandledT>
         extends EventHandler<RequestData, EventT, HandledT> {
 
     private final Logger logger = LoggerFactory.getLogger(CorrelatedEventHandler.class);

@@ -6,8 +6,8 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'msm-api-docs'
-copyright = '2025, glistermelon'
+project = 'Unofficial My Singing Monsters API Documentation'
+copyright = '2026, glistermelon'
 author = 'glistermelon'
 release = '0.1.0'
 
@@ -17,6 +17,8 @@ release = '0.1.0'
 extensions = [
     'myst_parser'
 ]
+
+default_dark_mode = True
 
 source_suffix = {
     '.rst': 'restructuredtext',

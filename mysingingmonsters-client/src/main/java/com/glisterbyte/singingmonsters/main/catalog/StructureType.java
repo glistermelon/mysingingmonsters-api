@@ -4,11 +4,10 @@ import com.glisterbyte.singingmonsters.main.common.MultiCurrencyValue;
 import com.glisterbyte.singingmonsters.main.common.Size;
 import com.glisterbyte.singingmonsters.main.structure.StructureCategory;
 import com.glisterbyte.singingmonsters.localization.Language;
-import com.glisterbyte.singingmonsters.localization.LocalizedTextManager;
 import com.glisterbyte.singingmonsters.common.StringUtil;
 import com.glisterbyte.singingmonsters.main.common.HasSfsData;
 import com.glisterbyte.singingmonsters.main.island.IslandType;
-import com.glisterbyte.singingmonsters.sfsmodels.data.SfsStructureInfo;
+import com.glisterbyte.singingmonsters.sfsmodels.data.SfsStructureType;
 import com.smartfoxserver.v2.entities.data.SFSObject;
 
 import java.time.Duration;
@@ -19,7 +18,7 @@ public class StructureType extends Entity implements HasSfsData {
 
     private final Catalog catalog;
 
-    private final SfsStructureInfo sfsSourceData;
+    private final SfsStructureType sfsSourceData;
 
     private final int structureId;
 
@@ -42,7 +41,7 @@ public class StructureType extends Entity implements HasSfsData {
     // for a castle type
     public int beds;
 
-    public StructureType(Catalog catalog, SfsStructureInfo sfsInfo) {
+    public StructureType(Catalog catalog, SfsStructureType sfsInfo) {
 
         super(sfsInfo);
 

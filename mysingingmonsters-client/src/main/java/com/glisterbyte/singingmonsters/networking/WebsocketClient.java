@@ -10,9 +10,9 @@ import com.glisterbyte.singingmonsters.networking.models.AuthParams;
 import com.glisterbyte.singingmonsters.networking.websockproto.EventFrame;
 import com.glisterbyte.singingmonsters.networking.websockproto.RequestFrame;
 import com.glisterbyte.singingmonsters.sfsmapping.*;
-import com.glisterbyte.singingmonsters.sfsmapping.exceptions.MissingCommandException;
-import com.glisterbyte.singingmonsters.sfsmapping.exceptions.SfsMapException;
 import com.glisterbyte.singingmonsters.handling.EventHandlerManager;
+import com.glisterbyte.singingmonsters.sfsmapping.exceptions.MapFromSfsException;
+import com.glisterbyte.singingmonsters.sfsmapping.exceptions.MapToSfsException;
 import com.glisterbyte.singingmonsters.sfsmodels.*;
 import com.glisterbyte.singingmonsters.sfsmodels.data.LoginData;
 import com.glisterbyte.singingmonsters.sfsmodels.events.LoginResponse;
@@ -195,7 +195,7 @@ public class WebsocketClient extends WebSocketListener {
         catch (MissingCommandException ex) {
             logger.warn("Received unrecognized command '{}' from the server", ex.getCommand());
         }
-        catch (SfsMapException ex) {
+        catch (MapFromSfsException ex) {
             logger.warn("Failed to map event data from the server", ex);
         }
         catch (Throwable ex) {
@@ -392,7 +392,12 @@ public class WebsocketClient extends WebSocketListener {
     }
 
     public void send(SfsRequestModel request) throws ClientException {
-        send(request.getCommand(), SfsMapper.mapToSFSObject(request));
+        try {
+            send(request.getCommand(), SfsMapper.mapToSFSObject(request));
+        }
+        catch (Throwable ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private SfsEventModel requestChunked(SfsRequestModel request, Class<? extends SfsEventModel> responseModel)
@@ -464,9 +469,10 @@ public class WebsocketClient extends WebSocketListener {
 
             }
         }
-        catch (RuntimeException ex) {
+        catch (MapToSfsException ex) {
             throw new RuntimeException(ex);
-        } finally {
+        }
+        finally {
             chunkedResponseQueues.remove(command);
             releaseCommandLock(lock);
         }
@@ -494,7 +500,7 @@ public class WebsocketClient extends WebSocketListener {
         try {
             data = SfsMapper.mapToSFSObject(request);
         }
-        catch (SfsMapException ex) {
+        catch (MapToSfsException ex) {
             throw new ClientException(ex);
         }
 

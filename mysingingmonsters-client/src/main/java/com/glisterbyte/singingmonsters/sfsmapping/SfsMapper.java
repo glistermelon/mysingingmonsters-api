@@ -3,8 +3,8 @@ package com.glisterbyte.singingmonsters.sfsmapping;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.glisterbyte.singingmonsters.common.StringUtil;
 import com.glisterbyte.singingmonsters.sfsmapping.exceptions.*;
-import com.glisterbyte.singingmonsters.sfsmapping.exceptions.InstantiationException;
 import com.glisterbyte.singingmonsters.sfsmodels.SfsCorrelatedResultResponse;
 import com.glisterbyte.singingmonsters.sfsmodels.SfsModel;
 import com.glisterbyte.singingmonsters.sfsmodels.SfsResultResponse;
@@ -12,10 +12,10 @@ import com.smartfoxserver.v2.entities.data.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class SfsMapper {
 
@@ -27,24 +27,147 @@ public class SfsMapper {
                 : field.getName();
     }
 
-    public static <T> T mapSFSObjectToClass(Class<T> tClass, ISFSObject sfsObject)
-            throws SfsMapException {
-        return mapSFSObjectToClass(tClass, sfsObject, false);
+    private static final Map<Class<?>, Object> primitiveDefaults = new HashMap<>();
+
+    static {
+        primitiveDefaults.put(boolean.class, false);
+        primitiveDefaults.put(byte.class, (byte)0);
+        primitiveDefaults.put(short.class, (short)0);
+        primitiveDefaults.put(int.class, 0);
+        primitiveDefaults.put(long.class, 0L);
+        primitiveDefaults.put(float.class, 0.0f);
+        primitiveDefaults.put(double.class, 0.0d);
+        primitiveDefaults.put(char.class, (char)0);
     }
 
-    public static <T> T mapSFSObjectToClass(Class<T> tClass, ISFSObject sfsObject, boolean optional)
-        throws SfsMapException {
+    private static final Set<Class<?>> wrapperTypes = Set.of(
+            Boolean.class, Byte.class, Short.class, Character.class,
+            Integer.class, Long.class, Float.class, Double.class, Void.class
+    );
 
-        if (getFields(tClass).stream().noneMatch(f -> sfsObject.containsKey(getFieldKey(f)))) {
-            if (optional) return null;
-            else throw new MissingKeyException(
-                    sfsObject, "Missing all keys when mapping to non-optional type '" + tClass.getName() + "'"
-            );
+    public static boolean isBoxedType(Class<?> type) {
+        return wrapperTypes.contains(type);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static ArrayList<?> createRawArrayList() {
+        return new ArrayList();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void addToUnknownList(List<?> list, Object object) {
+        ((List)list).add(object);
+    }
+
+    private static <T> T mapWrapperToClass(Class<T> type, @Nullable Class<?> listElementType, SFSDataWrapper wrapper)
+            throws MapFromSfsException {
+
+        Object sourceObject = wrapper.getObject();
+
+        if (sourceObject == null) throw new MapFromSfsException("Cannot map null to " + type.getName());
+
+        String sourceObjectStr = sourceObject.getClass().getName() + " " + sourceObject;
+
+        if (type.isPrimitive() || isBoxedType(type)) {
+            try {
+                //noinspection unchecked
+                return (T)sourceObject;
+            }
+            catch (ClassCastException ex) {
+                throw new MapFromSfsException(StringUtil.format(
+                        "Cannot cast {} to {}",
+                        sourceObjectStr, type.getName()
+                ));
+            }
         }
 
-        T obj;
+        if (type == String.class) {
+            if (sourceObject instanceof String sourceString) {
+                //noinspection unchecked
+                return (T)sourceString;
+            }
+            else {
+                throw new MapFromSfsException(StringUtil.format("Cannot cast {} to String", sourceObjectStr));
+            }
+        }
+
+        if (List.class.isAssignableFrom(type)) {
+
+            if (listElementType == null) {
+                throw new MapFromSfsException(StringUtil.format(
+                        "List element type is null (source object is {})", sourceObjectStr
+                ));
+            }
+
+            List<?> mappedList;
+            try {
+                mappedList = createRawArrayList();
+            }
+            catch (Throwable ex) {
+                throw new MapFromSfsException(
+                        StringUtil.format(
+                                "Failed to instantiate {} <{}> (source object is {})",
+                                type.getName(), listElementType.getName(), sourceObjectStr
+                        ),
+                        ex
+                );
+            }
+
+            if (List.class.isAssignableFrom(sourceObject.getClass())) {
+
+                List<?> sourceList = (List<?>)sourceObject;
+                for (Object sourceElement : sourceList) {
+                    if (listElementType.isInstance(sourceElement)) {
+                        addToUnknownList(mappedList, sourceElement);
+                    }
+                    else {
+                        throw new MapFromSfsException(StringUtil.format(
+                                "Source element {} does not match list element type {} (source object is {})",
+                                sourceElement, listElementType.getName(), sourceObjectStr
+                        ));
+                    }
+                }
+
+            }
+            else {
+
+                if (!(sourceObject instanceof ISFSArray sfsArray)) {
+                    throw new MapFromSfsException(StringUtil.format(
+                            "Expected an SFSArray to map to {} <{}>, but got {}",
+                            type.getName(), listElementType.getName(), sourceObjectStr
+                    ));
+                }
+
+                for (SFSDataWrapper elementWrapper : sfsArray) {
+                    addToUnknownList(
+                            mappedList,
+                            mapWrapperToClass(listElementType, null, elementWrapper)
+                    );
+                }
+
+            }
+
+            //noinspection unchecked
+            return (T)mappedList;
+
+        }
+
+        if (sourceObject instanceof ISFSObject sfsObject) {
+            return mapSFSObjectToClass(type, sfsObject);
+        }
+
+        throw new MapFromSfsException(StringUtil.format(
+                "Don't know how to map {} to {} <{}>",
+                sourceObjectStr, type.getName(), listElementType
+        ));
+
+    }
+
+    public static <T> T mapSFSObjectToClass(Class<T> tClass, ISFSObject sfsObject) throws MapFromSfsException {
+
+        T mappedObj;
         try {
-            obj = tClass.getDeclaredConstructor().newInstance();
+            mappedObj = tClass.getDeclaredConstructor().newInstance();
         }
         catch (
                 NoSuchMethodException
@@ -52,295 +175,142 @@ public class SfsMapper {
                 | java.lang.InstantiationException
                 | IllegalAccessException ex
         ) {
-            throw new InstantiationException("Instantiating class '" + tClass.getName() + "' failed.", ex);
+            throw new MapFromSfsException("Failed to instantiate mapped object", ex);
         }
 
-        // Not very elegant, but I can do whatever I want right...
-        boolean isFailedResultResponse = false;
-        if (obj instanceof SfsResultResponse || obj instanceof SfsCorrelatedResultResponse) {
-            if (!sfsObject.containsKey("success")) {
-                throw new MissingKeyException(sfsObject, "Missing key: 'success'");
-            }
-            var value = sfsObject.get("success");
-            if (value.getTypeId() != SFSDataType.BOOL) {
-                throw new MissingKeyException(sfsObject, "Key lacks boolean value: 'success'");
-            }
-            isFailedResultResponse = !sfsObject.getBool("success");
+
+        // For failed requests, anything that can be mapped will be, but the rest will be ignored without throwing
+        boolean allFieldsOptional = false;
+        if (mappedObj instanceof SfsResultResponse || mappedObj instanceof SfsCorrelatedResultResponse) {
+            Boolean success = sfsObject.getBool("success");
+            if (success == null) throw new MissingKeyException("success", boolean.class, sfsObject);
+            allFieldsOptional = !success;
         }
 
-        for (Field field : getFields(tClass)) {
 
-            // Uncomment this if this ever needs to work on non-public fields
-            // field.setAccessible(true);
+        try {
 
-            if (field.isAnnotationPresent(SfsMapperIgnore.class)) continue;
+            for (Field field : getFields(tClass)) {
 
-            try {
+                if (field.isAnnotationPresent(SfsMapperIgnore.class)) continue;
 
                 if (field.isAnnotationPresent(SfsObjectField.class)) {
-                    field.set(obj, sfsObject);
+                    field.set(mappedObj, sfsObject);
                     continue;
                 }
 
-                if (field.isAnnotationPresent(SfsInline.class)) {
-                    field.set(obj, mapSFSObjectToClass(field.getType(), sfsObject, field.isAnnotationPresent(SfsOptional.class)));
-                    continue;
-                }
-
+                Class<?> fieldType = field.getType();
                 String key = getFieldKey(field);
+                SFSDataWrapper sourceWrapper = sfsObject.get(key);
+                Object sourceObject = Optional.ofNullable(sourceWrapper)
+                        .map(SFSDataWrapper::getObject).orElse(null);
 
-                if (!sfsObject.containsKey(key)) {
-                    if (isFailedResultResponse) continue;
-                    if (field.isAnnotationPresent(SfsOptional.class)) {
-                        field.set(obj, null);
-                        continue;
-                    }
-                    if (List.class.isAssignableFrom(field.getType())) {
-                        field.set(obj, new ArrayList<>());
-                        continue;
-                    }
-                    throw new MissingKeyException(sfsObject, "Missing key: '" + key + "'");
-                }
+                Class<?> listElementType = Optional.ofNullable(field.getAnnotation(SfsArrayElementType.class))
+                        .map(SfsArrayElementType::value).orElse(null);
 
-                var type = field.getType();
+                if (sourceObject == null) {
 
-                if (type == int.class || type == Integer.class) {
-                    var value = sfsObject.get(key);
-                    if (value.getTypeId() != SFSDataType.INT) {
-                        throw new MissingKeyException(sfsObject, "Key lacks int value: '" + key + "'");
-                    }
-                    field.set(obj, value.getObject());
-                } else if (type == long.class || type == Long.class) {
-                    var value = sfsObject.get(key);
-                    if (value.getTypeId() != SFSDataType.LONG) {
-                        throw new MissingKeyException(sfsObject, "Key lacks long value: '" + key + "'");
-                    }
-                    field.set(obj, value.getObject());
-                } else if (type == short.class || type == Short.class) {
-                    var value = sfsObject.get(key);
-                    if (value.getTypeId() != SFSDataType.SHORT) {
-                        throw new MissingKeyException(sfsObject, "Key lacks short value: '" + key + "'");
-                    }
-                    field.set(obj, value.getObject());
-                } else if (type == double.class || type == Double.class) {
-                    var value = sfsObject.get(key);
-                    if (value.getTypeId() != SFSDataType.DOUBLE) {
-                        throw new MissingKeyException(sfsObject, "Key lacks double value: '" + key + "'");
-                    }
-                    field.set(obj, value.getObject());
-                } else if (type == float.class || type == Float.class) {
-                    var value = sfsObject.get(key);
-                    if (value.getTypeId() != SFSDataType.FLOAT) {
-                        throw new MissingKeyException(sfsObject, "Key lacks float value: '" + key + "'");
-                    }
-                    field.set(obj, value.getObject());
-                } else if (type == boolean.class || type == Boolean.class) {
-                    var value = sfsObject.get(key);
-                    if (value.getTypeId() != SFSDataType.BOOL) {
-                        throw new MissingKeyException(sfsObject, "Key lacks boolean value: '" + key + "'");
-                    }
-                    field.set(obj, value.getObject());
-                } else if (type == String.class) {
-                    var value = sfsObject.get(key);
-                    if (value.getTypeId() != SFSDataType.UTF_STRING) {
-                        throw new MissingKeyException(sfsObject, "Key lacks string value: '" + key + "'");
-                    }
-                    field.set(obj, value.getObject());
-                }
-                else if (field.isAnnotationPresent(SfsJsonObject.class)) {
-                    String jsonStr = sfsObject.getUtfString(key);
-                    var mapper = new ObjectMapper();
-                    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                    field.set(obj, mapper.readValue(jsonStr, field.getType()));
-                }
-                else if (List.class.isAssignableFrom(type)) {
-
-                    if (!field.isAnnotationPresent(SfsArrayElementType.class)) {
-                        throw new UnmappableTypeException("Can't map unannotated list '" + key + "'");
-                    }
-                    Class<?> elementType = field.getAnnotation(SfsArrayElementType.class).value();
-
-                    SFSDataWrapper array = sfsObject.get(key);
-
-                    List<Object> list = new ArrayList<>();
-
-                    if (
-                            field.isAnnotationPresent(SfsJsonArray.class)
-                            && array.getTypeId() == SFSDataType.UTF_STRING
-                    ) {
-                        String jsonStr = sfsObject.getUtfString(key);
-                        ObjectMapper mapper = new ObjectMapper();
-                        var listType = mapper.getTypeFactory()
-                                .constructCollectionType(List.class, elementType);
-                        list = mapper.readValue(jsonStr, listType);
-                    }
-                    else if (elementType == Integer.class) {
-                        if (array.getTypeId() == SFSDataType.INT_ARRAY) {
-                            list.addAll(sfsObject.getIntArray(key));
-                        }
-                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
-                            var sfsArray = sfsObject.getSFSArray(key);
-                            for (int i = 0; i < sfsArray.size(); i++) {
-                                list.add(sfsArray.getInt(i));
+                    if (field.isAnnotationPresent(SfsOptional.class) || allFieldsOptional) {
+                        if (fieldType.isPrimitive()) {
+                            try {
+                                field.set(mappedObj, primitiveDefaults.get(fieldType));
+                            }
+                            catch (IllegalArgumentException ex) {
+                                throw new MapFromSfsException("Failed to set primitive field", ex);
                             }
                         }
-                        else {
-                            throw new UnmappableTypeException("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
-                        }
-                    }
-                    else if (elementType == Long.class) {
-                        if (array.getTypeId() == SFSDataType.LONG_ARRAY) {
-                            list.addAll(sfsObject.getLongArray(key));
-                        }
-                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
-                            var sfsArray = sfsObject.getSFSArray(key);
-                            for (int i = 0; i < sfsArray.size(); i++) {
-                                list.add(sfsArray.getLong(i));
-                            }
-                        }
-                        else {
-                            throw new UnmappableTypeException("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
-                        }
-                    }
-                    else if (elementType == Short.class) {
-                        if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
-                            var sfsArray = sfsObject.getSFSArray(key);
-                            for (int i = 0; i < sfsArray.size(); i++) {
-                                list.add(sfsArray.getShort(i));
-                            }
-                        }
-                        else {
-                            throw new UnmappableTypeException("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
-                        }
-                    }
-                    else if (elementType == Double.class) {
-                        if (array.getTypeId() == SFSDataType.DOUBLE_ARRAY) {
-                            list.addAll(sfsObject.getDoubleArray(key));
-                        }
-                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
-                            var sfsArray = sfsObject.getSFSArray(key);
-                            for (int i = 0; i < sfsArray.size(); i++) {
-                                list.add(sfsArray.getDouble(i));
-                            }
-                        }
-                        else {
-                            throw new UnmappableTypeException("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
-                        }
-                    }
-                    else if (elementType == Float.class) {
-                        if (array.getTypeId() == SFSDataType.FLOAT_ARRAY) {
-                            list.addAll(sfsObject.getFloatArray(key));
-                        }
-                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
-                            var sfsArray = sfsObject.getSFSArray(key);
-                            for (int i = 0; i < sfsArray.size(); i++) {
-                                list.add(sfsArray.getFloat(i));
-                            }
-                        }
-                        else {
-                            throw new UnmappableTypeException("Can't map '" + array.getTypeId() + "' for key '" + key + "'");
-                        }
-                    }
-                    else if (elementType == Boolean.class) {
-                        if (array.getTypeId() == SFSDataType.BOOL_ARRAY) {
-                            list.addAll(sfsObject.getBoolArray(key));
-                        }
-                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
-                            var sfsArray = sfsObject.getSFSArray(key);
-                            for (int i = 0; i < sfsArray.size(); i++) {
-                                list.add(sfsArray.getBool(i));
-                            }
-                        }
-                        else {
-                            throw new UnmappableTypeException(
-                                    "Can't map '" + array.getTypeId() + "' for key '" + key + "'"
-                            );
-                        }
-                    }
-                    else if (elementType == String.class) {
-                        if (array.getTypeId() == SFSDataType.UTF_STRING_ARRAY) {
-                            list.addAll(sfsObject.getUtfStringArray(key));
-                        }
-                        else if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
-                            var sfsArray = sfsObject.getSFSArray(key);
-                            for (int i = 0; i < sfsArray.size(); i++) {
-                                var element = sfsArray.get(i).getObject();
-                                if (!(element instanceof String)) {
-                                    throw new UnmappableTypeException(String.class, element);
-                                }
-                                list.add(element);
-                            }
-                        }
-                        else {
-                            throw new UnmappableTypeException(
-                                    "Can't map '" + array.getTypeId() + "' for key '" + key + "'"
-                            );
-                        }
+                        else field.set(mappedObj, null);
                     }
                     else {
-                        if (array.getTypeId() == SFSDataType.SFS_ARRAY) {
-                            var sfsArray = sfsObject.getSFSArray(key);
-                            for (int i = 0; i < sfsArray.size(); i++) {
-                                list.add(mapSFSObjectToClass(elementType, sfsArray.getSFSObject(i), false));
-                            }
-                        }
-                        else {
-                            throw new UnmappableTypeException(
-                                    "Can't map '" + array.getTypeId() + "' for key '" + key + "'"
-                            );
-                        }
+                        throw new MissingKeyException(key, fieldType, sfsObject);
                     }
 
-                    field.set(obj, list);
+                }
+                else if (field.isAnnotationPresent(SfsJsonObject.class)) {
+
+                    if (!(sourceObject instanceof String jsonStr)) throw new MissingKeyException(key, String.class, sfsObject);
+                    var mapper = new ObjectMapper();
+                    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                    try {
+                        field.set(mappedObj, mapper.readValue(jsonStr, field.getType()));
+                    }
+                    catch (JsonProcessingException ex) {
+                        throw new DeserializeJsonException(jsonStr, ex);
+                    }
 
                 }
-                else if (type.isAnnotationPresent(SfsPropertyArray.class)) {
-                    var value = sfsObject.get(key);
-                    if (value.getTypeId() != SFSDataType.SFS_ARRAY) {
-                        throw new MissingKeyException(sfsObject, "Key lacks property SFS array value: '" + key + "'");
+                else if (fieldType.isAnnotationPresent(SfsEntryArray.class)) {
+
+                    if (!(sourceObject instanceof ISFSArray sfsArray)) {
+                        throw new MissingKeyException(key, ISFSArray.class, sfsObject);
                     }
-                    SFSArray array = (SFSArray)value.getObject();
-                    SFSObject properties = new SFSObject();
-                    for (int i = 0; i < array.size(); i++) {
-                        ISFSObject property = array.getSFSObject(i);
-                        var entry = property.iterator().next();
-                        properties.put(entry.getKey(), entry.getValue());
+                    SFSObject mappedSfsObject = new SFSObject();
+                    for (SFSDataWrapper elementWrapper : sfsArray) {
+                        Object element = elementWrapper.getObject();
+                        if (!(element instanceof ISFSObject elementSfsObject)) {
+                            throw new MapFromSfsException(StringUtil.format(
+                                    "SFSArray annotated with SfsPropertyArray has non-SFSObject element {} {}",
+                                    element.getClass().getName(), element
+                            ));
+                        }
+                        var entry = elementSfsObject.iterator().next();
+                        mappedSfsObject.put(entry.getKey(), entry.getValue());
                     }
-                    field.set(obj, mapSFSObjectToClass(type, properties, field.isAnnotationPresent(SfsOptional.class)));
+                    field.set(mappedObj, mapSFSObjectToClass(fieldType, mappedSfsObject));
+
                 }
-                else if (!type.isPrimitive()) {
-                    var value = sfsObject.get(key);
-                    if (value.getTypeId() != SFSDataType.SFS_OBJECT) {
-                        throw new MissingKeyException(sfsObject, "Key lacks SFS object value: '" + key + "'");
+                else if (field.isAnnotationPresent(SfsJsonArray.class)) {
+
+                    if (!(sourceObject instanceof String jsonStr)) {
+                        throw new MissingKeyException(key, String.class, sfsObject);
                     }
-                    field.set(obj, mapSFSObjectToClass(
-                            type, (ISFSObject)value.getObject(), field.isAnnotationPresent(SfsOptional.class)
-                    ));
+                    if (listElementType == null) {
+                        throw new MapFromSfsException(StringUtil.format(
+                                "Field {}::{} needs to be annotated with SfsArrayElementType",
+                                tClass.getName(), fieldType.getName()
+                        ));
+                    }
+                    ObjectMapper mapper = new ObjectMapper();
+                    var listType = mapper.getTypeFactory().constructCollectionType(List.class, listElementType);
+                    try {
+                        field.set(mappedObj, mapper.readValue(jsonStr, listType));
+                    }
+                    catch (JsonProcessingException ex) {
+                        throw new DeserializeJsonException(jsonStr, ex);
+                    }
+
                 }
                 else {
-                    throw new UnmappableTypeException(type);
+
+                    field.set(mappedObj, mapWrapperToClass(fieldType, listElementType, sourceWrapper));
+
                 }
 
             }
-            catch (IllegalAccessException ex) {
-                throw new InaccessibleFieldException("Inaccessible field: '" + field.getName() + "'");
-            } catch (JsonProcessingException ex) {
-                throw new UnmappableTypeException(ex.getMessage());
-            }
+
+        }
+        catch (IllegalAccessException ex) {
+            throw new MapFromSfsException(ex);
+        }
+        catch (MapFromSfsException ex) {
+            throw new MapFromSfsException(sfsObject, ex);
         }
 
-        return obj;
+        return mappedObj;
 
     }
 
-    private static SfsModel castToModel(Object object) throws UnmappableTypeException {
+    private static SfsModel castToModel(Object object) throws MapToSfsException {
         if (!SfsModel.class.isAssignableFrom(object.getClass())) {
-            throw new UnmappableTypeException(object.getClass());
+            throw new MapToSfsException(StringUtil.format(
+                    "Cannot cast {} {} to SfsModel",
+                    object.getClass().getName(), object
+            ));
         }
         return (SfsModel)object;
     }
 
-    public static <T extends SfsModel> SFSObject mapToSFSObject(T obj) throws SfsMapException  {
+    public static <T extends SfsModel> SFSObject mapToSFSObject(T obj) throws MapToSfsException  {
 
         SFSObject sfsObject = new SFSObject();
 
@@ -358,7 +328,7 @@ public class SfsMapper {
 
                 String key = field.isAnnotationPresent(SfsKey.class)
                         ? field.getAnnotation(SfsKey.class).value()
-                        : camelToSnakeCase(field.getName());
+                        : field.getName();
 
                 var type = field.getType();
 
@@ -437,7 +407,7 @@ public class SfsMapper {
 
             }
             catch (IllegalAccessException ex) {
-                throw new InaccessibleFieldException("Inaccessible field: '" + field.getName() + "'");
+                throw new MapToSfsException(ex);
             }
         }
 
@@ -452,18 +422,6 @@ public class SfsMapper {
             classType = classType.getSuperclass();
         }
         return fields;
-    }
-
-    private static String camelToSnakeCase(String input) {
-
-        StringBuilder output = new StringBuilder();
-        for (int i = 0; i < input.length(); i++) {
-            char c = input.charAt(i);
-            if (Character.isUpperCase(c)) output.append("_").append(Character.toLowerCase(c));
-            else output.append(c);
-        }
-        return output.toString();
-
     }
 
 }

@@ -8,17 +8,22 @@ public class SfsResultResponse extends SfsEventModel {
 
     public boolean success;
 
+    // These are all different fields I've seen used for error messages
+
     @SfsOptional
     public String message;
 
     @SfsOptional
     public String error_msg;
 
+    @SfsOptional
+    public String errorMessage;
+
     @NotNull
     public String getMessage(LocalizedTextManager localizedTextManager) {
         if (message != null) return message;
         if (error_msg != null) return localizedTextManager.getText(error_msg);
+        if (errorMessage != null) return errorMessage;
         return "[no message]";
     }
-
 }

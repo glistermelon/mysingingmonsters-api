@@ -3,7 +3,7 @@ package com.glisterbyte.singingmonsters.main.catalog;
 import com.glisterbyte.singingmonsters.main.common.Size;
 import com.glisterbyte.singingmonsters.main.common.HasSfsData;
 import com.glisterbyte.singingmonsters.sfsmodels.data.SfsMonsterSpecies;
-import com.glisterbyte.singingmonsters.sfsmodels.data.SfsStructureInfo;
+import com.glisterbyte.singingmonsters.sfsmodels.data.SfsStructureType;
 
 public abstract class Entity implements HasSfsData {
 
@@ -15,7 +15,7 @@ public abstract class Entity implements HasSfsData {
         size = new Size(data.size_x, data.size_y);
     }
 
-    public Entity(SfsStructureInfo data) {
+    public Entity(SfsStructureType data) {
         entityId = data.entity_id;
         size = new Size(data.size_x, data.size_y);
     }

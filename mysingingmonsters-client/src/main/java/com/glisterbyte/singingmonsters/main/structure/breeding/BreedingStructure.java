@@ -37,7 +37,7 @@ public class BreedingStructure extends Structure
                 );
                 Validate.isTrue(
                         userBreedingId == breedingState.breedingId(),
-                        "Expected finish event user breeding id {} to match actual user breeding id {}",
+                        "Expected finish event user breeding id %s to match actual user breeding id %s",
                         userBreedingId, breedingState.breedingId()
                 );
             }

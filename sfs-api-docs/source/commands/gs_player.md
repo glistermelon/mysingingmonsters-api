@@ -1,25 +1,45 @@
 # Player
 
-## Command String
+Requests the user's player data.
+
+## Command
 
 `gs_player`
 
-## Client-to-Server
+## Request
 
-Requests that the server provide the the user's data.
+```{list-table}
+:widths: 20 20
+:header-rows: 1
+* - Key
+  - Type
+* - last_updated
+  - string
+```
 
-### Parameters
+## Response
 
-| Key | Value Type | Description |
-|-|-|-|
-| `last_updated` | `utf_string` | I have only seen `" 0"` passed (yes, with the space).
-
-## Server-to-Client
-
-Most likely always in a response to a request, provides the user with their player data.
-
-### Parameters
-
-| Key | Value Type | Description |
-|-|-|-|
-| `player_object` | `sfs_object` | The user's [player data](../data/player). |
+```{list-table}
+:widths: 20 20
+:header-rows: 1
+* - Key
+  - Type
+* - player_object
+  - [Player](/data/Player)
+```
+An extra response with command gs_get_friends is also sent with the following fields.
+Though not listed here, the [standard response parameters](/topics/StandardResponseParameters) are included.
+```{list-table}
+:widths: 20 20
+:header-rows: 1
+* - Key
+  - Type
+* - pending
+  - array\<[Friend Request](/data/FriendRequest)\>
+* - friends
+  - array\<[Friend](/data/Friend)\>
+* - tribes
+  - array\<[Tribe](/data/Tribe)\>
+* - top_tribes
+  - array\<[Tribe](/data/Tribe)\>
+```

@@ -58,8 +58,6 @@ The `Catalog` class is effectively a local storage of bulk data from the server.
 * Structure Types
 * Bakery Recipes
 
-#### Usage
-
 The `Catalog` primarily provides methods to get all of the items for a respective one of those categories or a specific item by a kind of ID. However, it also provides four specialized catalog instances of types:
 * `ElementCatalog`
 * `MonsterCatalog`
